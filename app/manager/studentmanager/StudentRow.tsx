@@ -9,9 +9,16 @@ interface StudentRowProps {
   onEdit: (student: Student) => void
   onDelete: (studentId: string) => void
   onUpdateScoreOrAttendance: (studentId: string, field: "scores" | "attendance", subject: string, value: number) => void
+  onViewDetails: (studentId: string) => void
 }
 
-export const StudentRow: React.FC<StudentRowProps> = ({ student, onEdit, onDelete, onUpdateScoreOrAttendance }) => {
+export const StudentRow: React.FC<StudentRowProps> = ({
+  student,
+  onEdit,
+  onDelete,
+  onUpdateScoreOrAttendance,
+  onViewDetails,
+}) => {
   const [editingScore, setEditingScore] = useState<string | null>(null)
   const [editingAttendance, setEditingAttendance] = useState<string | null>(null)
 
@@ -114,7 +121,13 @@ export const StudentRow: React.FC<StudentRowProps> = ({ student, onEdit, onDelet
         </div>
       </td>
       <td className="border border-gray-300 px-4 py-3">
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={() => onViewDetails(student.id)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+          >
+            View Details
+          </button>
           <button
             onClick={() => onEdit(student)}
             className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"

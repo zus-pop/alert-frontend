@@ -67,28 +67,6 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
-  <CardHeader className="text-center">
-    <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-      <Users className="w-8 h-8 text-green-600" />
-    </div>
-    <CardTitle className="text-2xl">Manager Dashboard</CardTitle>
-    <CardDescription>Giám sát tiến độ và báo cáo học sinh</CardDescription>
-  </CardHeader>
-  <CardContent className="text-center">
-    <ul className="text-sm text-gray-600 mb-6 space-y-2">
-      <li>• Theo dõi tiến độ học tập</li>
-      <li>• Phân công giáo viên hỗ trợ</li>
-      <li>• Tạo báo cáo học sinh</li>
-    </ul>
-    <Link href="/manager">
-      <Button className="w-full" variant="secondary">
-        <Shield className="w-4 h-4 mr-2" />
-        Truy cập Manager Dashboard
-      </Button>
-    </Link>
-  </CardContent>
-</Card>
         </div>
       </div>
     </div>

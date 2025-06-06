@@ -20,6 +20,26 @@ export const StudentForm: React.FC<StudentFormProps> = ({ student, onSubmit, onC
     subjects: [] as string[],
     scores: {} as { [subject: string]: number },
     attendance: {} as { [subject: string]: number },
+    // Profile information
+    dateOfBirth: "",
+    idCard: "",
+    address: "",
+    phoneNumber: "",
+    dateOfIssue: "",
+    placeOfIssue: "",
+    // Academic information
+    memberCode: "",
+    mode: "",
+    status: "Active" as "Active" | "Inactive" | "Graduated" | "On Leave",
+    currentTermNo: 1,
+    major: "",
+    // Parent information
+    fatherName: "",
+    fatherPhone: "",
+    fatherJob: "",
+    motherName: "",
+    motherPhone: "",
+    motherJob: "",
   })
 
   const [newSubject, setNewSubject] = useState("")
@@ -37,6 +57,26 @@ export const StudentForm: React.FC<StudentFormProps> = ({ student, onSubmit, onC
         subjects: student.subjects,
         scores: student.scores,
         attendance: student.attendance,
+        // Profile information
+        dateOfBirth: student.dateOfBirth || "",
+        idCard: student.idCard || "",
+        address: student.address || "",
+        phoneNumber: student.phoneNumber || "",
+        dateOfIssue: student.dateOfIssue || "",
+        placeOfIssue: student.placeOfIssue || "",
+        // Academic information
+        memberCode: student.memberCode || "",
+        mode: student.mode || "",
+        status: student.status || "Active",
+        currentTermNo: student.currentTermNo || 1,
+        major: student.major || "",
+        // Parent information
+        fatherName: student.fatherName || "",
+        fatherPhone: student.fatherPhone || "",
+        fatherJob: student.fatherJob || "",
+        motherName: student.motherName || "",
+        motherPhone: student.motherPhone || "",
+        motherJob: student.motherJob || "",
       })
     }
   }, [student])
@@ -168,6 +208,199 @@ export const StudentForm: React.FC<StudentFormProps> = ({ student, onSubmit, onC
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+        </div>
+
+        {/* Add these fields after the existing form fields, before the subjects section */}
+        <div className="md:col-span-2">
+          <h3 className="text-lg font-semibold mb-2 mt-4 text-gray-700">Additional Profile Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+              <input
+                type="date"
+                name="dateOfBirth"
+                value={formData.dateOfBirth}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">ID Card</label>
+              <input
+                type="text"
+                name="idCard"
+                value={formData.idCard}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+              <input
+                type="text"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Issue</label>
+              <input
+                type="date"
+                name="dateOfIssue"
+                value={formData.dateOfIssue}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Place of Issue</label>
+              <input
+                type="text"
+                name="placeOfIssue"
+                value={formData.placeOfIssue}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="md:col-span-2">
+          <h3 className="text-lg font-semibold mb-2 mt-4 text-gray-700">Academic Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Member Code</label>
+              <input
+                type="text"
+                name="memberCode"
+                value={formData.memberCode}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mode</label>
+              <input
+                type="text"
+                name="mode"
+                value={formData.mode}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Graduated">Graduated</option>
+                <option value="On Leave">On Leave</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Current Term No</label>
+              <input
+                type="number"
+                name="currentTermNo"
+                value={formData.currentTermNo}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Major</label>
+              <input
+                type="text"
+                name="major"
+                value={formData.major}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="md:col-span-2">
+          <h3 className="text-lg font-semibold mb-2 mt-4 text-gray-700">Parent Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Father's Name</label>
+              <input
+                type="text"
+                name="fatherName"
+                value={formData.fatherName}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Father's Phone</label>
+              <input
+                type="text"
+                name="fatherPhone"
+                value={formData.fatherPhone}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Father's Job</label>
+              <input
+                type="text"
+                name="fatherJob"
+                value={formData.fatherJob}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mother's Name</label>
+              <input
+                type="text"
+                name="motherName"
+                value={formData.motherName}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mother's Phone</label>
+              <input
+                type="text"
+                name="motherPhone"
+                value={formData.motherPhone}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mother's Job</label>
+              <input
+                type="text"
+                name="motherJob"
+                value={formData.motherJob}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
         </div>
 
