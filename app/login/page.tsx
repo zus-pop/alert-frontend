@@ -82,7 +82,7 @@ export default function LoginPage() {
           break
         case "manager":
          
-          router.push("/")
+          router.push("/manager")
           break
       
       }
