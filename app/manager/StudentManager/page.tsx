@@ -1,96 +1,77 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { StudentRow } from "../StudentRow/page"
-import { StudentForm } from "../StudentForm/page"
+import { fetchStudents, Student as ApiStudent, createStudent, CreateStudentPayload } from "../../../services/studentApi"
 
-export interface Student {
-  id: string
-  fullName: string
-  studentId: string
-  gender: "Male" | "Female" | "Other"
-  email: string
-  password: string
-  subjects: string[]
-  scores: { [subject: string]: number }
-  attendance: { [subject: string]: number }
-}
-
-export const StudentManager: React.FC = () => {
-  const [students, setStudents] = useState<Student[]>([
-    {
-      id: "1",
-      fullName: "John Doe",
-      studentId: "ST001",
-      gender: "Male",
-      email: "john.doe@example.com",
-      password: "password123",
-      subjects: ["EXE101", "MMA301", "SWD392"],
-      scores: { EXE101: 85, MMA301: 92, SWD392: 78 },
-      attendance: { EXE101: 95, MMA301: 88, SWD392: 92 },
-    },
-    {
-      id: "2",
-      fullName: "Jane Smith",
-      studentId: "ST002",
-      gender: "Female",
-      email: "jane.smith@example.com",
-      password: "password456",
-      subjects: ["SDN302", "MMA301", "SWD392"],
-      scores: { SDN302: 90, MMA301: 87, SWD392: 94 },
-      attendance: { SDN302: 92, MMA301: 85, SWD392: 98 },
-    },
-  ])
-
+export default function StudentManagerPage() {
+  const [students, setStudents] = useState<ApiStudent[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [totalPage, setTotalPage] = useState(1)
   const [showForm, setShowForm] = useState(false)
-  const [editingStudent, setEditingStudent] = useState<Student | null>(null)
+  const [form, setForm] = useState<CreateStudentPayload>({
+    studentCode: "",
+    firstName: "",
+    lastName: "",
+    gender: "Male",
+    email: ""
+  })
+  const [formError, setFormError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  const handleAddStudent = (studentData: Omit<Student, "id">) => {
-    const newStudent: Student = {
-      ...studentData,
-      id: Date.now().toString(),
+  useEffect(() => {
+    setLoading(true)
+    fetchStudents(page, 10)
+      .then((res) => {
+        setStudents(res.data)
+        setTotalPage(res.totalPage)
+        setLoading(false)
+      })
+      .catch(() => {
+        setError("Không thể tải danh sách sinh viên")
+        setLoading(false)
+      })
+  }, [page])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setFormError(null)
+    // Validate studentCode
+    if (!/^[a-zA-Z0-9]{8}$/.test(form.studentCode)) {
+      setFormError("Student code phải đúng 8 ký tự chữ và số!")
+      return
     }
-    setStudents([...students, newStudent])
-    setShowForm(false)
+    setSubmitting(true)
+    try {
+      // Chuyển giá trị giới tính về đúng chuẩn backend
+      let genderValue = form.gender;
+      if (genderValue === "Nam") genderValue = "Male";
+      else if (genderValue === "Nữ") genderValue = "Female";
+      else if (genderValue === "Khác") genderValue = "Other";
+      await createStudent({ ...form, gender: genderValue })
+      setShowForm(false)
+      setForm({ studentCode: "", firstName: "", lastName: "", gender: "Male", email: "" })
+      // Reload lại danh sách trang hiện tại
+      setLoading(true)
+      fetchStudents(page, 10).then((res) => {
+        setStudents(res.data)
+        setTotalPage(res.totalPage)
+        setLoading(false)
+      })
+    } catch (err) {
+      setFormError("Thêm sinh viên thất bại!")
+    }
+    setSubmitting(false)
   }
 
-  const handleUpdateStudent = (updatedStudent: Student) => {
-    setStudents(students.map((student) => (student.id === updatedStudent.id ? updatedStudent : student)))
-    setEditingStudent(null)
-    setShowForm(false)
-  }
-
-  const handleDeleteStudent = (studentId: string) => {
-    setStudents(students.filter((student) => student.id !== studentId))
-  }
-
-  const handleEditStudent = (student: Student) => {
-    setEditingStudent(student)
-    setShowForm(true)
-  }
-
-  const handleUpdateScoreOrAttendance = (
-    studentId: string,
-    field: "scores" | "attendance",
-    subject: string,
-    value: number,
-  ) => {
-    setStudents(
-      students.map((student) => {
-        if (student.id === studentId) {
-          return {
-            ...student,
-            [field]: {
-              ...student[field],
-              [subject]: value,
-            },
-          }
-        }
-        return student
-      }),
-    )
-  }
+  if (loading) return <div>Đang tải danh sách sinh viên...</div>
+  if (error) return <div>{error}</div>
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -99,29 +80,85 @@ export const StudentManager: React.FC = () => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-800">Student Management System</h1>
             <button
-              onClick={() => {
-                setEditingStudent(null)
-                setShowForm(true)
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+              onClick={() => setShowForm((v) => !v)}
             >
-              Add New Student
+              {showForm ? "Đóng" : "Thêm sinh viên"}
             </button>
           </div>
-
           {showForm && (
-            <div className="mb-6">
-              <StudentForm
-                student={editingStudent}
-                onSubmit={editingStudent ? handleUpdateStudent : handleAddStudent}
-                onCancel={() => {
-                  setShowForm(false)
-                  setEditingStudent(null)
-                }}
-              />
-            </div>
+            <form onSubmit={handleSubmit} className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border">
+              <div className="md:col-span-1 flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mã sinh viên</label>
+                <input
+                  type="text"
+                  name="studentCode"
+                  value={form.studentCode}
+                  onChange={handleInputChange}
+                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                  maxLength={8}
+                  required
+                />
+              </div>
+              <div className="md:col-span-1 flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Giới tính</label>
+                <select
+                  name="gender"
+                  value={form.gender}
+                  onChange={handleInputChange}
+                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                >
+                  <option value="Male">Nam</option>
+                  <option value="Female">Nữ</option>
+                  <option value="Other">Khác</option>
+                </select>
+              </div>
+              <div className="md:col-span-1 flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Họ</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={form.firstName}
+                  onChange={handleInputChange}
+                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div className="md:col-span-1 flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tên</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={form.lastName}
+                  onChange={handleInputChange}
+                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div className="md:col-span-2 flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleInputChange}
+                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              {formError && <div className="md:col-span-2 text-red-600 text-sm">{formError}</div>}
+              <div className="md:col-span-2 flex justify-end">
+                <button
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium"
+                  disabled={submitting}
+                >
+                  {submitting ? "Đang thêm..." : "Thêm sinh viên"}
+                </button>
+              </div>
+            </form>
           )}
-
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
@@ -131,31 +168,52 @@ export const StudentManager: React.FC = () => {
                   <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Gender</th>
                   <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Email</th>
                   <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Password</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Subjects</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Scores</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Attendance</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {students.map((student) => (
                   <StudentRow
-                    key={student.id}
-                    student={student}
-                    onEdit={handleEditStudent}
-                    onDelete={handleDeleteStudent}
-                    onUpdateScoreOrAttendance={handleUpdateScoreOrAttendance}
+                    key={student._id}
+                    student={{
+                      id: student._id,
+                      fullName: `${student.firstName} ${student.lastName}`,
+                      studentId: student.studentCode,
+                      gender: student.gender as any,
+                      email: student.email,
+                      password: student.password || "",
+                      subjects: [],
+                      scores: {},
+                      attendance: {},
+                    }}
                   />
                 ))}
               </tbody>
             </table>
           </div>
-
           {students.length === 0 && (
-            <div className="text-center py-8 text-gray-500">No students found. Add a new student to get started.</div>
+            <div className="text-center py-8 text-gray-500">Không có sinh viên nào.</div>
           )}
+          {/* Pagination */}
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <button
+              className="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium disabled:opacity-50"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              Trang trước
+            </button>
+            <span className="mx-2 text-gray-800">Trang {page} / {totalPage}</span>
+            <button
+              className="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium disabled:opacity-50"
+              onClick={() => setPage((p) => Math.min(totalPage, p + 1))}
+              disabled={page === totalPage}
+            >
+              Trang sau
+            </button>
+          </div>
         </div>
       </div>
     </div>
   )
 }
+

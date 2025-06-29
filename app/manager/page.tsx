@@ -1,25 +1,18 @@
-<<<<<<< HEAD
-import { StudentManager } from "./studentmanager/StudentManager";
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+
 export default function ManagerPage() {
-  return (
-    <div className="p-8">
-      <StudentManager></StudentManager>
-    </div>
-  );
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user && user.role === "MANAGER") {
+      router.replace("/manager/studentmanager");
+    }
+  }, [user, loading, router]);
+
+  // Có thể hiển thị loading hoặc null trong khi chờ xác thực
+  return null;
 }
-=======
-import { StudentManager } from "../manager/StudentManager/page"
-
-
-function App() {
-  return (
-    <div className="App">
-      <StudentManager />
-     
-      
-    </div>
-  )
-}
-
-export default App
->>>>>>> c974d99feb29905e8e83b602027ce3572bc85ee2

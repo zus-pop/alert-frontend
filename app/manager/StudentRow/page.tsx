@@ -33,14 +33,14 @@ export const StudentRow: React.FC<StudentRowProps> = ({ student, onEdit, onDelet
 
   return (
     <tr className="hover:bg-gray-50">
-      <td className="border border-gray-300 px-4 py-3">{student.fullName}</td>
-      <td className="border border-gray-300 px-4 py-3">{student.studentId}</td>
-      <td className="border border-gray-300 px-4 py-3">{student.gender}</td>
-      <td className="border border-gray-300 px-4 py-3">{student.email}</td>
-      <td className="border border-gray-300 px-4 py-3">
+      <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.fullName}</td>
+      <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.studentId}</td>
+      <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.gender}</td>
+      <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.email}</td>
+      <td className="border border-gray-300 px-4 py-3 text-gray-800">
         <span className="text-gray-400">••••••••</span>
       </td>
-      <td className="border border-gray-300 px-4 py-3">
+      <td className="border border-gray-300 px-4 py-3 text-gray-800">
         <div className="flex flex-wrap gap-1">
           {student.subjects.map((subject) => (
             <span key={subject} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
@@ -49,7 +49,7 @@ export const StudentRow: React.FC<StudentRowProps> = ({ student, onEdit, onDelet
           ))}
         </div>
       </td>
-      <td className="border border-gray-300 px-4 py-3">
+      <td className="border border-gray-300 px-4 py-3 text-gray-800">
         <div className="space-y-1">
           {student.subjects.map((subject) => (
             <div key={subject} className="flex items-center gap-2">
@@ -81,7 +81,7 @@ export const StudentRow: React.FC<StudentRowProps> = ({ student, onEdit, onDelet
           ))}
         </div>
       </td>
-      <td className="border border-gray-300 px-4 py-3">
+      <td className="border border-gray-300 px-4 py-3 text-gray-800">
         <div className="space-y-1">
           {student.subjects.map((subject) => (
             <div key={subject} className="flex items-center gap-2">
@@ -113,7 +113,7 @@ export const StudentRow: React.FC<StudentRowProps> = ({ student, onEdit, onDelet
           ))}
         </div>
       </td>
-      <td className="border border-gray-300 px-4 py-3">
+      <td className="border border-gray-300 px-4 py-3 text-gray-800">
         <div className="flex gap-2">
           <button
             onClick={() => onEdit(student)}
