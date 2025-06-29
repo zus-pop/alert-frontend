@@ -1,8 +1,9 @@
 "use client"
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { login, logout, getUserInfo, isAuthenticated } from '@/services/api';
 import { useRouter } from 'next/navigation';
+import { useLogin, useLogout, useUserInfo } from '@/hooks/useAuth';
+import { isAuthenticated } from '@/services/authApi';
 
 interface User {
   id: string;
@@ -24,77 +25,80 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [isAuth, setIsAuth] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  
+  // Using TanStack Query hooks
+  const loginMutation = useLogin();
+  const logoutMutation = useLogout();
+  const { data: userData, isLoading: isLoadingUserInfo, error: userInfoError, refetch } = useUserInfo(isAuthenticated());
 
   useEffect(() => {
-    const checkAuth = async () => {
-      setLoading(true);
-      if (isAuthenticated()) {
-        try {
-          const userData = await getUserInfo();
-          setUser(userData);
-          setIsAuth(true);
-        } catch (err) {
-          console.error('Error fetching user data:', err);
-          setUser(null);
-          setIsAuth(false);
-          logout(); 
-        }
-      } else {
-        setUser(null);
-        setIsAuth(false);
-      }
-      setLoading(false);
-    };
-
-    checkAuth();
-  }, []);
-
-  const handleLogin = async (email: string, password: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await login({ email, password });
-      const userData = await getUserInfo();
-      console.log('User data:', userData);
+    // If we have user data from the query, update the state
+    if (userData) {
+      console.log('AuthContext: User data updated', userData);
       setUser(userData);
       setIsAuth(true);
+    }
+  }, [userData]);
+
+  useEffect(() => {
+    // Check authentication on mount
+    console.log('AuthContext: Checking authentication on mount', isAuthenticated());
+    if (isAuthenticated()) {
+      refetch();
+    } else {
+      setUser(null);
+      setIsAuth(false);
+    }
+  }, [refetch]);
+
+  const handleLogin = async (email: string, password: string) => {
+    setError(null);
+    console.log('AuthContext: Login attempt', email);
+    try {
+      await loginMutation.mutateAsync({ email, password });
+      console.log('AuthContext: Login successful, fetching user info');
       
-      if (userData.role === 'ADMIN') {
-        router.push('/admin');
-      } else if (userData.role === 'SUPERVISOR') {
-        router.push('/supervisor');
-      } else if (userData.role === 'MANAGER') {
-        router.push('/manager');
-      } else {
-        router.push('/');
+      // After login, get user info
+      const result = await refetch();
+      const userData = result.data;
+      
+      if (userData) {
+        console.log('AuthContext: User data received after login', userData);
+        setUser(userData);
+        setIsAuth(true);
+        
+        if (userData.role === 'ADMIN') {
+          router.push('/admin');
+        } else if (userData.role === 'STAFF') {
+          router.push('/supervisor');
+        } else if (userData.role === 'MANAGER') {
+          router.push('/manager');
+        } else {
+          router.push('/');
+        }
       }
-      
     } catch (err: any) {
+      console.error('AuthContext: Login error', err);
       setError(err.message || 'Login failed');
       setIsAuth(false);
-    } finally {
-      setLoading(false);
     }
   };
 
- 
   const handleLogout = () => {
-    logout();
+    logoutMutation.mutate();
     setUser(null);
     setIsAuth(false);
-    router.push('/login');
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        loading,
-        error,
+        loading: isLoadingUserInfo || loginMutation.isPending,
+        error: error || (userInfoError ? String(userInfoError) : null),
         login: handleLogin,
         logout: handleLogout,
         isAuthenticated: isAuth,
