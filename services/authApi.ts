@@ -40,7 +40,7 @@ interface JwtPayload {
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = getLocalStorageItem('access_token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
@@ -64,8 +64,7 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
       
       try {
-        
-        const refreshToken = localStorage.getItem('refresh_token');
+        const refreshToken = getLocalStorageItem('refresh_token');
         if (!refreshToken) {
          
           logout();
@@ -107,6 +106,26 @@ axiosInstance.interceptors.response.use(
 );
 
 
+// Helper functions for localStorage
+const getLocalStorageItem = (key: string): string | null => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem(key);
+  }
+  return null;
+};
+
+const setLocalStorageItem = (key: string, value: string): void => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(key, value);
+  }
+};
+
+const removeLocalStorageItem = (key: string): void => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(key);
+  }
+};
+
 export const login = async ({ email, password }: LoginRequest): Promise<AuthResponse> => {
   try {
     console.log('Login attempt with:', email);
@@ -114,13 +133,12 @@ export const login = async ({ email, password }: LoginRequest): Promise<AuthResp
     const data = response.data;
     console.log('Login response:', data);
     
-  
     if (data.accessToken) {
-      localStorage.setItem('access_token', data.accessToken);
+      setLocalStorageItem('access_token', data.accessToken);
     }
     
     if (data.refreshToken) {
-      localStorage.setItem('refresh_token', data.refreshToken);
+      setLocalStorageItem('refresh_token', data.refreshToken);
     }
     
     return data;
@@ -143,19 +161,18 @@ export const getUserInfo = async (): Promise<UserData> => {
 };
 
 export const logout = () => {
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
+  removeLocalStorageItem('access_token');
+  removeLocalStorageItem('refresh_token');
 };
 
 export const isAuthenticated = (): boolean => {
-  const token = localStorage.getItem('access_token');
+  const token = getLocalStorageItem('access_token');
   if (!token) return false;
   
   try {
     const decoded = jwtDecode<JwtPayload>(token);
     const currentTime = Date.now() / 1000;
     
-  
     return decoded.exp > currentTime;
   } catch (error) {
     return false;
@@ -163,7 +180,7 @@ export const isAuthenticated = (): boolean => {
 };
 
 export const getTokenExpiration = (): number | null => {
-  const token = localStorage.getItem('access_token');
+  const token = getLocalStorageItem('access_token');
   if (!token) return null;
   
   try {

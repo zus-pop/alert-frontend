@@ -18,7 +18,7 @@ interface RefreshResponse {
 }
 
 // API URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-alert-5ea310f83e0b.herokuapp.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Check if token is expired
 const isTokenExpired = (token: string): boolean => {
@@ -31,14 +31,37 @@ const isTokenExpired = (token: string): boolean => {
   }
 };
 
+// Helper function for localStorage access
+const getLocalStorageItem = (key: string): string | null => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem(key);
+  }
+  return null;
+};
+
+// Helper function for localStorage setting
+const setLocalStorageItem = (key: string, value: string): void => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(key, value);
+  }
+};
+
+// Helper function for localStorage removal
+const removeLocalStorageItem = (key: string): void => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(key);
+  }
+};
+
 // Hook to get a valid access token
 export function useValidAccessToken() {
   return useQuery({
     queryKey: ['validAccessToken'],
     queryFn: async () => {
       console.log('Validating access token');
-      const accessToken = localStorage.getItem('access_token');
-      const refreshToken = localStorage.getItem('refresh_token');
+      
+      const accessToken = getLocalStorageItem('access_token');
+      const refreshToken = getLocalStorageItem('refresh_token');
       
       // If no tokens, return null
       if (!accessToken || !refreshToken) {
@@ -66,23 +89,23 @@ export function useValidAccessToken() {
           console.log('Token refresh successful');
           
           // Save the new tokens
-          localStorage.setItem('access_token', newAccessToken);
-          localStorage.setItem('refresh_token', newRefreshToken);
+          setLocalStorageItem('access_token', newAccessToken);
+          setLocalStorageItem('refresh_token', newRefreshToken);
           
           return newAccessToken;
         } catch (error) {
           // If refresh fails, clear tokens and return null
           console.error('Token refresh failed:', error);
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
+          removeLocalStorageItem('access_token');
+          removeLocalStorageItem('refresh_token');
           return null;
         }
       }
       
       // If both tokens are expired, clear and return null
       console.log('Both tokens expired');
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      removeLocalStorageItem('access_token');
+      removeLocalStorageItem('refresh_token');
       return null;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
