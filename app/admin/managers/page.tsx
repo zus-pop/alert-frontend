@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,7 +39,36 @@ import {
   UserCog,
   Building,
   Users,
+  Loader2
 } from "lucide-react"
+import { useSystemUsers, useDeleteSystemUser } from '@/hooks/useSystemUsers';
+import { useRouter } from 'next/navigation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+// Adapter from SystemUser to Manager interface
+const adaptSystemUserToManager = (user: any) => {
+  return {
+    id: user._id,
+    name: `${user.firstName} ${user.lastName}`,
+    email: user.email,
+    employeeId: user.employeeId || "N/A",
+    department: user.department || "N/A",
+    position: user.position || "N/A",
+    status: user.isActive ? "active" : "inactive",
+    teamSize: user.teamSize || 0,
+    createdAt: user.createdAt || new Date().toISOString(),
+    lastLogin: user.lastLogin || new Date().toISOString(),
+  }
+}
 
 interface Manager {
   id: string
@@ -54,51 +83,13 @@ interface Manager {
   lastLogin: string
 }
 
-const mockManagers: Manager[] = [
-  {
-    id: "1",
-    name: "Lê Văn C",
-    email: "levanc@email.com",
-    employeeId: "MG001",
-    department: "Hành chính",
-    position: "Trưởng phòng",
-    status: "active",
-    teamSize: 12,
-    createdAt: "2024-01-08",
-    lastLogin: "2024-01-20T14:20:00Z",
-  },
-  {
-    id: "2",
-    name: "Nguyễn Thị E",
-    email: "nguyenthie@email.com",
-    employeeId: "MG002",
-    department: "Đào tạo",
-    position: "Phó trưởng phòng",
-    status: "active",
-    teamSize: 8,
-    createdAt: "2024-01-12",
-    lastLogin: "2024-01-20T11:30:00Z",
-  },
-  {
-    id: "3",
-    name: "Trần Văn F",
-    email: "tranvanf@email.com",
-    employeeId: "MG003",
-    department: "Tài chính",
-    position: "Trưởng phòng",
-    status: "inactive",
-    teamSize: 6,
-    createdAt: "2024-01-05",
-    lastLogin: "2024-01-18T09:15:00Z",
-  },
-]
-
 export default function ManagersPage() {
-  const [managers, setManagers] = useState<Manager[]>(mockManagers)
+  const router = useRouter();
   const [isAddManagerOpen, setIsAddManagerOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterDepartment, setFilterDepartment] = useState<string>("all")
   const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [managerToDelete, setManagerToDelete] = useState<string | null>(null)
   const [newManager, setNewManager] = useState({
     name: "",
     email: "",
@@ -106,33 +97,34 @@ export default function ManagersPage() {
     department: "",
     position: "",
   })
+  
+  // Use the API to fetch managers (users with MANAGER role)
+  const { data, isLoading, error } = useSystemUsers({
+    page: 1,
+    limit: 100, // Get all managers to filter locally
+    role: 'MANAGER',
+  });
+  
+  const deleteSystemUser = useDeleteSystemUser();
+  
+  // Convert API users to Manager format
+  const managers: Manager[] = data?.data ? data.data.map(adaptSystemUserToManager) : [];
 
   const handleAddManager = () => {
-    const manager: Manager = {
-      id: Date.now().toString(),
-      ...newManager,
-      status: "active",
-      teamSize: 0,
-      createdAt: new Date().toISOString().split("T")[0],
-      lastLogin: new Date().toISOString(),
-    }
-    setManagers([...managers, manager])
-    setNewManager({ name: "", email: "", employeeId: "", department: "", position: "" })
+    // In a real implementation, this would call an API to create a new manager
+    // For now we'll just close the dialog
     setIsAddManagerOpen(false)
   }
 
-  const handleStatusToggle = (managerId: string) => {
-    setManagers(
-      managers.map((manager) =>
-        manager.id === managerId
-          ? { ...manager, status: manager.status === "active" ? "inactive" : "active" }
-          : manager,
-      ),
-    )
-  }
-
-  const handleDeleteManager = (managerId: string) => {
-    setManagers(managers.filter((manager) => manager.id !== managerId))
+  const handleDeleteManager = async () => {
+    if (managerToDelete) {
+      try {
+        await deleteSystemUser.mutateAsync(managerToDelete);
+        setManagerToDelete(null);
+      } catch (error) {
+        console.error('Failed to delete manager:', error);
+      }
+    }
   }
 
   const filteredManagers = managers.filter((manager) => {
@@ -151,6 +143,8 @@ export default function ManagersPage() {
     inactive: managers.filter((m) => m.status === "inactive").length,
     totalTeamSize: managers.reduce((sum, m) => sum + m.teamSize, 0),
   }
+
+  const departmentOptions = ["all", ...new Set(managers.map(m => m.department).filter(d => d !== "N/A"))];
 
   return (
     <div className="space-y-6">
@@ -338,10 +332,9 @@ export default function ManagersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tất cả phòng ban</SelectItem>
-                <SelectItem value="Hành chính">Hành chính</SelectItem>
-                <SelectItem value="Đào tạo">Đào tạo</SelectItem>
-                <SelectItem value="Tài chính">Tài chính</SelectItem>
-                <SelectItem value="Nhân sự">Nhân sự</SelectItem>
+                {departmentOptions.map(dept => 
+                  dept !== "all" && <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                )}
               </SelectContent>
             </Select>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -357,109 +350,141 @@ export default function ManagersPage() {
           </div>
 
           {/* Table */}
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader className="bg-gray-50">
-                <TableRow>
-                  <TableHead className="font-semibold">Quản lý</TableHead>
-                  <TableHead className="font-semibold">Mã NV</TableHead>
-                  <TableHead className="font-semibold">Phòng ban</TableHead>
-                  <TableHead className="font-semibold">Chức vụ</TableHead>
-                  <TableHead className="font-semibold">Nhóm</TableHead>
-                  <TableHead className="font-semibold">Trạng thái</TableHead>
-                  <TableHead className="font-semibold">Đăng nhập cuối</TableHead>
-                  <TableHead className="font-semibold text-right">Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredManagers.map((manager) => (
-                  <TableRow key={manager.id} className="hover:bg-gray-50">
-                    <TableCell>
-                      <div>
-                        <div className="font-medium text-gray-900">{manager.name}</div>
-                        <div className="text-sm text-gray-500">{manager.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="font-mono">
-                        {manager.employeeId}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Building className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">{manager.department}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                        {manager.position}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">{manager.teamSize} người</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          manager.status === "active"
-                            ? "bg-green-50 text-green-700 border-green-200"
-                            : "bg-red-50 text-red-700 border-red-200"
-                        }
-                      >
-                        {manager.status === "active" ? "Hoạt động" : "Tạm nghỉ"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-600">
-                        {new Date(manager.lastLogin).toLocaleString("vi-VN")}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Chỉnh sửa
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleStatusToggle(manager.id)}>
-                            <UserCheck className="w-4 h-4 mr-2" />
-                            {manager.status === "active" ? "Tạm nghỉ" : "Kích hoạt"}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteManager(manager.id)}>
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Xóa
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader className="bg-gray-50">
+                  <TableRow>
+                    <TableHead className="font-semibold">Quản lý</TableHead>
+                    <TableHead className="font-semibold">Mã NV</TableHead>
+                    <TableHead className="font-semibold">Phòng ban</TableHead>
+                    <TableHead className="font-semibold">Chức vụ</TableHead>
+                    <TableHead className="font-semibold">Nhóm</TableHead>
+                    <TableHead className="font-semibold">Trạng thái</TableHead>
+                    <TableHead className="font-semibold">Đăng nhập cuối</TableHead>
+                    <TableHead className="font-semibold text-right">Thao tác</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {filteredManagers.length === 0 && (
-            <div className="text-center py-8">
-              <UserCog className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy quản lý</h3>
-              <p className="text-gray-600">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                </TableHeader>
+                <TableBody>
+                  {filteredManagers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-10">
+                        <UserCog className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy quản lý</h3>
+                        <p className="text-gray-600">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredManagers.map((manager) => (
+                      <TableRow key={manager.id} className="hover:bg-gray-50">
+                        <TableCell>
+                          <div>
+                            <div className="font-medium text-gray-900">{manager.name}</div>
+                            <div className="text-sm text-gray-500">{manager.email}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-mono">
+                            {manager.employeeId}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Building className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">{manager.department}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                            {manager.position}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Users className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">{manager.teamSize} người</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={
+                              manager.status === "active"
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : "bg-red-50 text-red-700 border-red-200"
+                            }
+                          >
+                            {manager.status === "active" ? "Hoạt động" : "Tạm nghỉ"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-gray-600">
+                            {new Date(manager.lastLogin).toLocaleString("vi-VN")}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => router.push(`/admin/system-users/${manager.id}`)}>
+                                <Edit className="w-4 h-4 mr-2" />
+                                Chỉnh sửa
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-red-600" onClick={() => setManagerToDelete(manager.id)}>
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Xóa
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={!!managerToDelete} onOpenChange={(open) => !open && setManagerToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa Quản lý</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa quản lý này? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteManager}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteSystemUser.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang xóa...
+                </>
+              ) : (
+                'Xóa'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

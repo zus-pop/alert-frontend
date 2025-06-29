@@ -5,22 +5,22 @@ import { Shield, Users, AlertTriangle } from "lucide-react"
 import Login from "./login/page"
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
-      <div className=" mx-auto">
+    <div className="min-h-screen bg-[#00B4D8] p-8">
+      {/* <div className=" mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Early Warning System</h1>
           <p className="text-lg text-gray-600">Chọn vai trò của bạn để truy cập dashboard tương ứng</p>
-          <div className="mt-6">
+          <div className="mt-6"> */}
             {/* <Link href="/login">
               <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
                 Đăng nhập vào hệ thống
               </Button>
             </Link> */}
             <Login/>
-          </div>
-        </div>
+          {/* </div>
+        </div> */}
 
-        <div className="grid md:grid-cols-2 gap-8">
+        {/* <div className="grid md:grid-cols-2 gap-8">
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="text-center">
               <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
@@ -44,7 +44,7 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
+          {/* <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="text-center">
               <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
                 <AlertTriangle className="w-8 h-8 text-orange-600" />
@@ -65,10 +65,9 @@ export default function HomePage() {
                 </Button>
               </Link>
             </CardContent>
-          </Card>
-
-        </div>
+          </Card> */}
+        {/* </div> */} 
       </div>
-    </div>
+    // </div>
   )
 }

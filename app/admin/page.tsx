@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Users, UserCog, Shield, TrendingUp, Activity, AlertCircle } from "lucide-react"
+import { Users, UserCog, Shield, TrendingUp, Activity, AlertCircle, BookOpen } from "lucide-react"
 import Link from "next/link"
 
 export default function AdminDashboard() {
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-4 gap-6">
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <Link href="/admin/students">
             <CardHeader className="text-center pb-4">
@@ -143,6 +143,24 @@ export default function AdminDashboard() {
             <CardContent className="text-center">
               <div className="text-3xl font-bold text-purple-600 mb-2">{stats.supervisors}</div>
               <p className="text-sm text-gray-600">giám sát viên đang hoạt động</p>
+              <Button className="w-full mt-4" variant="outline">
+                Xem chi tiết
+              </Button>
+            </CardContent>
+          </Link>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Link href="/admin/subjects">
+            <CardHeader className="text-center pb-4">
+              <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+                <BookOpen className="w-8 h-8 text-amber-600" />
+              </div>
+              <CardTitle className="text-xl">Quản lý Môn học</CardTitle>
+              <CardDescription>Quản lý thông tin các môn học</CardDescription>
+            </CardHeader>
+            <CardContent className="text-center">
+              <div className="text-gray-600 mb-2">Xem và quản lý tất cả các môn học trong hệ thống</div>
               <Button className="w-full mt-4" variant="outline">
                 Xem chi tiết
               </Button>
