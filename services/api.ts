@@ -15,7 +15,9 @@ export const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    // Check if we're in a browser environment before accessing localStorage
+    const isBrowser = typeof window !== 'undefined';
+    const token = isBrowser ? localStorage.getItem('access_token') : null;
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
