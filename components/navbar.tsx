@@ -17,16 +17,19 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Bell, Settings, LogOut, User, Shield } from "lucide-react"
 
+interface NavItemProps {
+  href: string
+  label: string
+  icon?: React.ReactNode
+  badge?: number
+  badgeVariant?: "default" | "destructive" | "outline" | "secondary"
+}
+
 interface NavbarProps {
   title: string
   subtitle?: string
   role?: "admin" | "supervisor"
-  navItems?: Array<{
-    href: string
-    label: string
-    icon?: React.ReactNode
-    badge?: number
-  }>
+  navItems?: Array<NavItemProps>
 }
 
 export function Navbar({ title, subtitle, role, navItems }: NavbarProps) {
@@ -34,7 +37,7 @@ export function Navbar({ title, subtitle, role, navItems }: NavbarProps) {
 
   return (
     <div className="bg-white border-b border-gray-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-screen-2xl mx-auto px-6">
         {/* Top Header */}
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-6">
@@ -120,7 +123,10 @@ export function Navbar({ title, subtitle, role, navItems }: NavbarProps) {
                     {item.icon}
                     {item.label}
                     {item.badge && item.badge > 0 && (
-                      <Badge variant="secondary" className="ml-1 bg-blue-100 text-blue-800">
+                      <Badge 
+                        variant={item.badgeVariant || "secondary"} 
+                        className={`ml-1 ${item.badgeVariant === "destructive" ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"}`}
+                      >
                         {item.badge}
                       </Badge>
                     )}
