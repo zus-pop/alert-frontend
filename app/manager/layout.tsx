@@ -14,7 +14,7 @@ const supervisorNavItems = [
     icon: <BookOpen className="w-4 h-4" />,
   },
   {
-    href: "/manager/enrollmentmanager",
+    href: "/manager/registrationmanager",
     label: "Quản lý đăng ký môn",
     icon: <ClipboardList className="w-4 h-4" />,
   },
@@ -33,8 +33,8 @@ export default function SupervisorLayout({
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-red-50">
       <Navbar
-        title="Manager Dashboard"
-        subtitle="Quản lý sinh viên và môn học"
+        title="Supervisor Dashboard"
+        subtitle="Xử lý cảnh báo AI và hỗ trợ học sinh"
         role="supervisor"
         navItems={supervisorNavItems}
       />
