@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,7 +39,37 @@ import {
   Shield,
   AlertTriangle,
   MessageSquare,
+  Loader2
 } from "lucide-react"
+import { useSystemUsers, useDeleteSystemUser } from '@/hooks/useSystemUsers';
+import { useRouter } from 'next/navigation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+// Adapter from SystemUser to Supervisor interface
+const adaptSystemUserToSupervisor = (user: any) => {
+  return {
+    id: user._id,
+    name: `${user.firstName} ${user.lastName}`,
+    email: user.email,
+    employeeId: user.employeeId || "N/A",
+    department: user.department || "N/A",
+    specialization: user.specialization || "N/A",
+    status: user.isActive ? "active" : "inactive",
+    alertsHandled: user.alertsHandled || 0,
+    studentsSupervised: user.studentsSupervised || 0,
+    createdAt: user.createdAt || new Date().toISOString(),
+    lastLogin: user.lastLogin || new Date().toISOString(),
+  }
+}
 
 interface Supervisor {
   id: string
@@ -55,54 +85,13 @@ interface Supervisor {
   lastLogin: string
 }
 
-const mockSupervisors: Supervisor[] = [
-  {
-    id: "1",
-    name: "Trần Thị B",
-    email: "tranthib@email.com",
-    employeeId: "SP001",
-    department: "Quản lý giáo dục",
-    specialization: "Tâm lý học sinh",
-    status: "active",
-    alertsHandled: 25,
-    studentsSupervised: 45,
-    createdAt: "2024-01-10",
-    lastLogin: "2024-01-20T09:15:00Z",
-  },
-  {
-    id: "2",
-    name: "Hoàng Văn E",
-    email: "hoangvane@email.com",
-    employeeId: "SP002",
-    department: "Tâm lý học",
-    specialization: "Tư vấn học tập",
-    status: "active",
-    alertsHandled: 18,
-    studentsSupervised: 32,
-    createdAt: "2024-01-03",
-    lastLogin: "2024-01-20T08:00:00Z",
-  },
-  {
-    id: "3",
-    name: "Phạm Văn G",
-    email: "phamvang@email.com",
-    employeeId: "SP003",
-    department: "Quản lý giáo dục",
-    specialization: "Hành vi học sinh",
-    status: "inactive",
-    alertsHandled: 12,
-    studentsSupervised: 28,
-    createdAt: "2024-01-01",
-    lastLogin: "2024-01-19T15:30:00Z",
-  },
-]
-
 export default function SupervisorsPage() {
-  const [supervisors, setSupervisors] = useState<Supervisor[]>(mockSupervisors)
+  const router = useRouter();
   const [isAddSupervisorOpen, setIsAddSupervisorOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterDepartment, setFilterDepartment] = useState<string>("all")
   const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [supervisorToDelete, setSupervisorToDelete] = useState<string | null>(null)
   const [newSupervisor, setNewSupervisor] = useState({
     name: "",
     email: "",
@@ -110,34 +99,34 @@ export default function SupervisorsPage() {
     department: "",
     specialization: "",
   })
+  
+  // Use the API to fetch supervisors (users with SUPERVISOR role)
+  const { data, isLoading, error } = useSystemUsers({
+    page: 1,
+    limit: 100, // Get all supervisors to filter locally
+    role: 'SUPERVISOR',
+  });
+  
+  const deleteSystemUser = useDeleteSystemUser();
+  
+  // Convert API users to Supervisor format
+  const supervisors: Supervisor[] = data?.data ? data.data.map(adaptSystemUserToSupervisor) : [];
 
   const handleAddSupervisor = () => {
-    const supervisor: Supervisor = {
-      id: Date.now().toString(),
-      ...newSupervisor,
-      status: "active",
-      alertsHandled: 0,
-      studentsSupervised: 0,
-      createdAt: new Date().toISOString().split("T")[0],
-      lastLogin: new Date().toISOString(),
-    }
-    setSupervisors([...supervisors, supervisor])
-    setNewSupervisor({ name: "", email: "", employeeId: "", department: "", specialization: "" })
+    // In a real implementation, this would call an API to create a new supervisor
+    // For now we'll just close the dialog
     setIsAddSupervisorOpen(false)
   }
 
-  const handleStatusToggle = (supervisorId: string) => {
-    setSupervisors(
-      supervisors.map((supervisor) =>
-        supervisor.id === supervisorId
-          ? { ...supervisor, status: supervisor.status === "active" ? "inactive" : "active" }
-          : supervisor,
-      ),
-    )
-  }
-
-  const handleDeleteSupervisor = (supervisorId: string) => {
-    setSupervisors(supervisors.filter((supervisor) => supervisor.id !== supervisorId))
+  const handleDeleteSupervisor = async () => {
+    if (supervisorToDelete) {
+      try {
+        await deleteSystemUser.mutateAsync(supervisorToDelete);
+        setSupervisorToDelete(null);
+      } catch (error) {
+        console.error('Failed to delete supervisor:', error);
+      }
+    }
   }
 
   const filteredSupervisors = supervisors.filter((supervisor) => {
@@ -158,22 +147,20 @@ export default function SupervisorsPage() {
     totalStudentsSupervised: supervisors.reduce((sum, s) => sum + s.studentsSupervised, 0),
   }
 
+  const departmentOptions = ["all", ...new Set(supervisors.map(s => s.department).filter(d => d !== "N/A"))];
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Quản lý Supervisors</h2>
-          <p className="text-gray-600">Quản lý tài khoản và quyền hạn giám sát</p>
+          <h2 className="text-2xl font-bold text-gray-900">Quản lý Giám sát viên</h2>
+          <p className="text-gray-600">Quản lý tài khoản và nhiệm vụ giám sát</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm">
             <Download className="w-4 h-4 mr-2" />
             Xuất dữ liệu
-          </Button>
-          <Button variant="outline" size="sm">
-            <Upload className="w-4 h-4 mr-2" />
-            Nhập dữ liệu
           </Button>
           <Dialog open={isAddSupervisorOpen} onOpenChange={setIsAddSupervisorOpen}>
             <DialogTrigger asChild>
@@ -303,10 +290,10 @@ export default function SupervisorsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Cảnh báo xử lý</p>
-                <p className="text-2xl font-bold text-orange-600">{stats.totalAlertsHandled}</p>
+                <p className="text-sm font-medium text-gray-600">Số cảnh báo đã xử lý</p>
+                <p className="text-2xl font-bold text-amber-600">{stats.totalAlertsHandled}</p>
               </div>
-              <AlertTriangle className="w-8 h-8 text-orange-600" />
+              <AlertTriangle className="w-8 h-8 text-amber-600" />
             </div>
           </CardContent>
         </Card>
@@ -314,7 +301,7 @@ export default function SupervisorsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Học sinh giám sát</p>
+                <p className="text-sm font-medium text-gray-600">Sinh viên được giám sát</p>
                 <p className="text-2xl font-bold text-blue-600">{stats.totalStudentsSupervised}</p>
               </div>
               <MessageSquare className="w-8 h-8 text-blue-600" />
@@ -329,7 +316,7 @@ export default function SupervisorsPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-xl">Danh sách giám sát viên</CardTitle>
-              <CardDescription>Quản lý thông tin và quyền hạn của các giám sát viên</CardDescription>
+              <CardDescription>Quản lý thông tin và nhiệm vụ của các giám sát viên</CardDescription>
             </div>
             <Button variant="outline" size="sm">
               <RefreshCw className="w-4 h-4 mr-2" />
@@ -356,10 +343,9 @@ export default function SupervisorsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tất cả phòng ban</SelectItem>
-                <SelectItem value="Quản lý giáo dục">Quản lý giáo dục</SelectItem>
-                <SelectItem value="Tâm lý học">Tâm lý học</SelectItem>
-                <SelectItem value="Tư vấn học tập">Tư vấn học tập</SelectItem>
-                <SelectItem value="Hỗ trợ sinh viên">Hỗ trợ sinh viên</SelectItem>
+                {departmentOptions.map(dept => 
+                  dept !== "all" && <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                )}
               </SelectContent>
             </Select>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -375,116 +361,139 @@ export default function SupervisorsPage() {
           </div>
 
           {/* Table */}
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader className="bg-gray-50">
-                <TableRow>
-                  <TableHead className="font-semibold">Giám sát viên</TableHead>
-                  <TableHead className="font-semibold">Mã NV</TableHead>
-                  <TableHead className="font-semibold">Phòng ban</TableHead>
-                  <TableHead className="font-semibold">Chuyên môn</TableHead>
-                  <TableHead className="font-semibold">Cảnh báo</TableHead>
-                  <TableHead className="font-semibold">Học sinh</TableHead>
-                  <TableHead className="font-semibold">Trạng thái</TableHead>
-                  <TableHead className="font-semibold">Đăng nhập cuối</TableHead>
-                  <TableHead className="font-semibold text-right">Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredSupervisors.map((supervisor) => (
-                  <TableRow key={supervisor.id} className="hover:bg-gray-50">
-                    <TableCell>
-                      <div>
-                        <div className="font-medium text-gray-900">{supervisor.name}</div>
-                        <div className="text-sm text-gray-500">{supervisor.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="font-mono">
-                        {supervisor.employeeId}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-600">{supervisor.department}</span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                        {supervisor.specialization}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <AlertTriangle className="w-4 h-4 text-orange-500" />
-                        <span className="text-sm font-medium">{supervisor.alertsHandled}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <MessageSquare className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-medium">{supervisor.studentsSupervised}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          supervisor.status === "active"
-                            ? "bg-green-50 text-green-700 border-green-200"
-                            : "bg-red-50 text-red-700 border-red-200"
-                        }
-                      >
-                        {supervisor.status === "active" ? "Hoạt động" : "Tạm nghỉ"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-600">
-                        {new Date(supervisor.lastLogin).toLocaleString("vi-VN")}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Chỉnh sửa
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleStatusToggle(supervisor.id)}>
-                            <UserCheck className="w-4 h-4 mr-2" />
-                            {supervisor.status === "active" ? "Tạm nghỉ" : "Kích hoạt"}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => handleDeleteSupervisor(supervisor.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Xóa
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader className="bg-gray-50">
+                  <TableRow>
+                    <TableHead className="font-semibold">Giám sát viên</TableHead>
+                    <TableHead className="font-semibold">Mã NV</TableHead>
+                    <TableHead className="font-semibold">Phòng ban</TableHead>
+                    <TableHead className="font-semibold">Chuyên môn</TableHead>
+                    <TableHead className="font-semibold">Cảnh báo xử lý</TableHead>
+                    <TableHead className="font-semibold">Sinh viên</TableHead>
+                    <TableHead className="font-semibold">Trạng thái</TableHead>
+                    <TableHead className="font-semibold text-right">Thao tác</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {filteredSupervisors.length === 0 && (
-            <div className="text-center py-8">
-              <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy giám sát viên</h3>
-              <p className="text-gray-600">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                </TableHeader>
+                <TableBody>
+                  {filteredSupervisors.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-10">
+                        <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy giám sát viên</h3>
+                        <p className="text-gray-600">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredSupervisors.map((supervisor) => (
+                      <TableRow key={supervisor.id} className="hover:bg-gray-50">
+                        <TableCell>
+                          <div>
+                            <div className="font-medium text-gray-900">{supervisor.name}</div>
+                            <div className="text-sm text-gray-500">{supervisor.email}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-mono">
+                            {supervisor.employeeId}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-gray-600">{supervisor.department}</span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                            {supervisor.specialization}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <AlertTriangle className="w-4 h-4 text-amber-500" />
+                            <span className="text-sm text-gray-600">{supervisor.alertsHandled}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <MessageSquare className="w-4 h-4 text-blue-500" />
+                            <span className="text-sm text-gray-600">{supervisor.studentsSupervised}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={
+                              supervisor.status === "active"
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : "bg-red-50 text-red-700 border-red-200"
+                            }
+                          >
+                            {supervisor.status === "active" ? "Hoạt động" : "Tạm nghỉ"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => router.push(`/admin/system-users/${supervisor.id}`)}>
+                                <Edit className="w-4 h-4 mr-2" />
+                                Chỉnh sửa
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-red-600" onClick={() => setSupervisorToDelete(supervisor.id)}>
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Xóa
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={!!supervisorToDelete} onOpenChange={(open) => !open && setSupervisorToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa Giám sát viên</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa giám sát viên này? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteSupervisor}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteSystemUser.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang xóa...
+                </>
+              ) : (
+                'Xóa'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
