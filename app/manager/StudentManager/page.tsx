@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react"
 import { StudentRow } from "../StudentRow/page"
-import { fetchStudents, Student as ApiStudent, createStudent, CreateStudentPayload } from "../../../services/studentApi"
+import { fetchStudents, Student as ApiStudent, createStudent, CreateStudentPayload, updateStudent, restoreStudent, deleteStudent } from "../../../services/studentApi"
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from "../../../components/ui/dialog"
 
 export default function StudentManagerPage() {
   const [students, setStudents] = useState<ApiStudent[]>([])
@@ -20,6 +21,18 @@ export default function StudentManagerPage() {
   })
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [editingStudent, setEditingStudent] = useState<ApiStudent | null>(null)
+  const [editForm, setEditForm] = useState<CreateStudentPayload>({
+    studentCode: "",
+    firstName: "",
+    lastName: "",
+    gender: "Male",
+    email: ""
+  })
+  const [editError, setEditError] = useState<string | null>(null)
+  const [editSubmitting, setEditSubmitting] = useState(false)
+  const [showDeleted, setShowDeleted] = useState(false)
+  const [deletedStudents, setDeletedStudents] = useState<ApiStudent[]>([])
 
   useEffect(() => {
     setLoading(true)
@@ -28,6 +41,8 @@ export default function StudentManagerPage() {
         setStudents(res.data)
         setTotalPage(res.totalPage)
         setLoading(false)
+        // Lọc sinh viên đã xóa
+        setDeletedStudents(res.data.filter((s: ApiStudent) => s.isDeleted))
       })
       .catch(() => {
         setError("Không thể tải danh sách sinh viên")
@@ -68,6 +83,90 @@ export default function StudentManagerPage() {
       setFormError("Thêm sinh viên thất bại!")
     }
     setSubmitting(false)
+  }
+
+  const handleEdit = (student: any) => {
+    // Tìm lại object gốc từ students để lấy đúng _id theo id
+    const original = students.find(s => s._id === student.id)
+    if (!original) return
+    setEditingStudent(original)
+    setEditForm({
+      studentCode: original.studentCode || "",
+      firstName: original.firstName,
+      lastName: original.lastName,
+      gender: original.gender,
+      email: original.email
+    })
+    setEditError(null)
+  }
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value })
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setEditError(null)
+    if (!/^[a-zA-Z0-9]{8}$/.test(editForm.studentCode)) {
+      setEditError("Student code phải đúng 8 ký tự chữ và số!")
+      return
+    }
+    setEditSubmitting(true)
+    try {
+      let genderValue = editForm.gender
+      if (genderValue === "Nam") genderValue = "Male"
+      else if (genderValue === "Nữ") genderValue = "Female"
+      else if (genderValue === "Khác") genderValue = "Other"
+      // Sử dụng _id từ editingStudent
+      await updateStudent(editingStudent?._id!, { ...editForm, gender: genderValue })
+      setEditingStudent(null)
+      setEditSubmitting(false)
+      setLoading(true)
+      fetchStudents(page, 10).then((res) => {
+        setStudents(res.data)
+        setTotalPage(res.totalPage)
+        setLoading(false)
+      })
+    } catch (err) {
+      setEditError("Cập nhật sinh viên thất bại!")
+      setEditSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (studentId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa sinh viên này?")) return;
+    try {
+      await deleteStudent(studentId)
+      setLoading(true)
+      fetchStudents(page, 10).then((res) => {
+        setStudents(res.data)
+        setTotalPage(res.totalPage)
+        setDeletedStudents(res.data.filter((s: ApiStudent) => s.isDeleted))
+        setLoading(false)
+      })
+    } catch (err) {
+      alert("Xóa sinh viên thất bại!")
+    }
+  }
+
+  const handleUpdateScoreOrAttendance = (studentId: string, field: "scores" | "attendance", subject: string, value: number) => {
+    // Xử lý cập nhật điểm hoặc điểm danh
+    console.log("Update", field, "for student", studentId, "subject", subject, "value", value)
+  }
+
+  const handleRestore = async (id: string) => {
+    try {
+      await restoreStudent(id)
+      setLoading(true)
+      fetchStudents(page, 10).then((res) => {
+        setStudents(res.data)
+        setTotalPage(res.totalPage)
+        setDeletedStudents(res.data.filter((s: ApiStudent) => s.isDeleted))
+        setLoading(false)
+      })
+    } catch (err) {
+      alert("Khôi phục sinh viên thất bại!")
+    }
   }
 
   if (loading) return <div>Đang tải danh sách sinh viên...</div>
@@ -159,37 +258,177 @@ export default function StudentManagerPage() {
               </div>
             </form>
           )}
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Full Name</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Student ID</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Gender</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Email</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Password</th>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map((student) => (
-                  <StudentRow
-                    key={student._id}
-                    student={{
-                      id: student._id,
-                      fullName: `${student.firstName} ${student.lastName}`,
-                      studentId: student.studentCode,
-                      gender: student.gender as any,
-                      email: student.email,
-                      password: student.password || "",
-                      subjects: [],
-                      scores: {},
-                      attendance: {},
-                    }}
+          <Dialog open={!!editingStudent} onOpenChange={(open) => { if (!open) setEditingStudent(null) }}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Chỉnh sửa sinh viên</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleEditSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-1 flex flex-col">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mã sinh viên</label>
+                  <input
+                    type="text"
+                    name="studentCode"
+                    value={editForm.studentCode}
+                    onChange={handleEditInputChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    maxLength={8}
+                    required
                   />
-                ))}
-              </tbody>
-            </table>
+                </div>
+                <div className="md:col-span-1 flex flex-col">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Giới tính</label>
+                  <select
+                    name="gender"
+                    value={editForm.gender}
+                    onChange={handleEditInputChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    required
+                  >
+                    <option value="Male">Nam</option>
+                    <option value="Female">Nữ</option>
+                    <option value="Other">Khác</option>
+                  </select>
+                </div>
+                <div className="md:col-span-1 flex flex-col">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Họ</label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={editForm.firstName}
+                    onChange={handleEditInputChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    required
+                  />
+                </div>
+                <div className="md:col-span-1 flex flex-col">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên</label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={editForm.lastName}
+                    onChange={handleEditInputChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    required
+                  />
+                </div>
+                <div className="md:col-span-2 flex flex-col">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={editForm.email}
+                    onChange={handleEditInputChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    required
+                  />
+                </div>
+                {editError && <div className="md:col-span-2 text-red-600 text-sm">{editError}</div>}
+                <DialogFooter className="md:col-span-2 flex justify-end gap-2 mt-2">
+                  <button
+                    type="button"
+                    className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-lg font-medium"
+                    onClick={() => setEditingStudent(null)}
+                    disabled={editSubmitting}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg font-medium"
+                    disabled={editSubmitting}
+                  >
+                    {editSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+                  </button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+          <div className="flex justify-end mb-4">
+            <button
+              className={`px-4 py-2 rounded-lg font-medium ${showDeleted ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-700'} mr-2`}
+              onClick={() => setShowDeleted(false)}
+            >
+              Danh sách sinh viên
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg font-medium ${showDeleted ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+              onClick={() => setShowDeleted(true)}
+            >
+              Xem sinh viên đã xóa
+            </button>
           </div>
+          {showDeleted ? (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Họ và Tên</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Mã số sinh viên</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Giới tính</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Email</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Khôi phục</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deletedStudents.length === 0 && (
+                    <tr><td colSpan={5} className="text-center py-8 text-gray-500">Không có sinh viên đã xóa.</td></tr>
+                  )}
+                  {deletedStudents.map((student) => (
+                    <tr key={student._id} className="hover:bg-gray-50">
+                      <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.firstName} {student.lastName}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.studentCode || ''}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.gender}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.email}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-gray-800">
+                        <button
+                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium"
+                          onClick={() => handleRestore(student._id)}
+                        >
+                          Khôi phục
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Họ và Tên</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Mã số sinh viên</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Giới tính</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Email</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map((student) => (
+                    <StudentRow
+                      key={student._id}
+                      student={{
+                        id: student._id,
+                        fullName: `${student.firstName} ${student.lastName}`,
+                        studentId: student.studentCode || "",
+                        gender: student.gender as any,
+                        email: student.email,
+                        password: student.password || "",
+                        subjects: [],
+                        scores: {},
+                        attendance: {},
+                      }}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onUpdateScoreOrAttendance={handleUpdateScoreOrAttendance}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           {students.length === 0 && (
             <div className="text-center py-8 text-gray-500">Không có sinh viên nào.</div>
           )}

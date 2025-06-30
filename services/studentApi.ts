@@ -42,4 +42,19 @@ export interface CreateStudentPayload {
 export async function createStudent(data: CreateStudentPayload) {
   const res = await axios.post(`${BASE_URL}/api/students`, data);
   return res.data;
+}
+
+export async function updateStudent(id: string, data: Partial<CreateStudentPayload>) {
+  const res = await axios.patch(`${BASE_URL}/api/students/${id}`, data);
+  return res.data;
+}
+
+export async function restoreStudent(id: string) {
+  const res = await axios.patch(`${BASE_URL}/api/students/${id}/restore`);
+  return res.data;
+}
+
+export async function deleteStudent(id: string) {
+  const res = await axios.delete(`${BASE_URL}/api/students/${id}`);
+  return res.data;
 } 
