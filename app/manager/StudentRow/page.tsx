@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import type { Student } from "../studentmanager/StudentManager"
+import { Pencil, Trash } from "lucide-react"
 
 interface StudentRowProps {
   student: Student
@@ -41,9 +42,10 @@ export const StudentRow: React.FC<StudentRowProps> = ({ student, onEdit, onDelet
         <div className="flex gap-2">
           <button
             onClick={() => onEdit(student)}
-            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+            className="p-2 rounded hover:bg-yellow-100 transition-colors"
+            title="Sửa sinh viên"
           >
-            Sửa
+            <Pencil className="w-5 h-5 text-yellow-600" />
           </button>
           <button
             onClick={() => {
@@ -51,9 +53,10 @@ export const StudentRow: React.FC<StudentRowProps> = ({ student, onEdit, onDelet
                 onDelete(student.id)
               }
             }}
-            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+            className="p-2 rounded hover:bg-red-100 transition-colors"
+            title="Xóa sinh viên"
           >
-            Xóa
+            <Trash className="w-5 h-5 text-red-600" />
           </button>
         </div>
       </td>

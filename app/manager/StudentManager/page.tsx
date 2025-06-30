@@ -177,7 +177,7 @@ export default function StudentManagerPage() {
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800">Student Management System</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Quản lý sinh viên</h1>
             <button
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
               onClick={() => setShowForm((v) => !v)}
@@ -344,15 +344,15 @@ export default function StudentManagerPage() {
               </form>
             </DialogContent>
           </Dialog>
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-start mb-4">
             <button
-              className={`px-4 py-2 rounded-lg font-medium ${showDeleted ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-700'} mr-2`}
+              className={`px-3 py-1 rounded text-sm font-medium ${showDeleted ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-700'} mr-2`}
               onClick={() => setShowDeleted(false)}
             >
               Danh sách sinh viên
             </button>
             <button
-              className={`px-4 py-2 rounded-lg font-medium ${showDeleted ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+              className={`px-3 py-1 rounded text-sm font-medium ${showDeleted ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
               onClick={() => setShowDeleted(true)}
             >
               Xem sinh viên đã xóa
