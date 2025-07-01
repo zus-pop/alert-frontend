@@ -3,7 +3,7 @@
 import type React from "react"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -29,12 +29,13 @@ interface NavItemProps {
 interface NavbarProps {
   title: string
   subtitle?: string
-  role?: "admin" | "supervisor"
+  role?: "admin" | "manager" | "supervisor"
   navItems?: Array<NavItemProps>
 }
 
 export function Navbar({ title, subtitle, role, navItems }: NavbarProps) {
   const pathname = usePathname()
+
   const { user, logout } = useAuth()
 
   // Extract first and last initial for avatar fallback
@@ -45,6 +46,7 @@ export function Navbar({ title, subtitle, role, navItems }: NavbarProps) {
     if (names.length === 1) return names[0].charAt(0).toUpperCase()
     return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase()
   }
+
 
   return (
     <div className="bg-white border-b border-gray-200 shadow-sm">
@@ -92,15 +94,19 @@ export function Navbar({ title, subtitle, role, navItems }: NavbarProps) {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
+
                     <p className="text-sm font-medium leading-none">{user?.name || "User"}</p>
                     <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
                     <p className="text-xs leading-none text-muted-foreground capitalize">
                       {user?.role?.toLowerCase()}
+
                     </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => router.push("/profile")}
+                >
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>

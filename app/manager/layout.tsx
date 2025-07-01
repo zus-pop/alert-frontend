@@ -2,26 +2,26 @@
 
 import type React from "react"
 import { Navbar } from "@/components/navbar"
+
 import { AlertTriangle, MessageSquare, BarChart3 } from "lucide-react"
 import ProtectedRoute from "@/components/ProtectedRoute"
 
+
 const supervisorNavItems = [
   {
-    href: "/manager/StudentForm",
-    label: "Cảnh báo",
-    icon: <AlertTriangle className="w-4 h-4" />,
-    badge: 5,
+    href: "/manager/studentmanager",
+    label: "Student Management",
+    icon: <Users className="w-4 h-4" />,
   },
   {
-    href: "/manager/StudentManager",
-    label: "Phản hồi",
-    icon: <MessageSquare className="w-4 h-4" />,
-    badge: 12,
+    href: "/manager/subjectmanager",
+    label: "Subject Management",
+    icon: <BookOpen className="w-4 h-4" />,
   },
   {
-    href: "/manager/",
-    label: "Thống kê",
-    icon: <BarChart3 className="w-4 h-4" />,
+    href: "/manager/enrollmentmanager",
+    label: "Course Enrollment Management",
+    icon: <ClipboardList className="w-4 h-4" />,
   },
 ]
 
@@ -42,5 +42,6 @@ export default function SupervisorLayout({
         <main className="max-w-7xl mx-auto p-6">{children}</main>
       </div>
     </ProtectedRoute>
+
   )
 }

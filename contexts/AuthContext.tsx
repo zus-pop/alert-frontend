@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 interface User {
   id: string;
+  _id?: string;
   email: string;
   role: string;
   name?: string;
@@ -40,7 +41,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // If we have user data from the query, update the state
     if (userData) {
       console.log('AuthContext: User data updated', userData);
-      setUser(userData);
+      const _userData = userData as any; // ép kiểu tạm thời để lấy _id
+      setUser({
+        ...userData,
+        id: _userData._id || userData.id
+      });
       setIsAuth(true);
     }
   }, [userData]);

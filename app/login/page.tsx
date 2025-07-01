@@ -11,6 +11,18 @@ import Image from "next/image"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
 import toastService from "@/services/toast"
+import { MOCK_CREDENTIALS } from "@/constants/mock-credentials"
+
+const MOCK_CREDENTIALS = {
+  admin: {
+    email: "admin@example.com",
+    password: "password123"
+  },
+  supervisor: {
+    email: "supervisor@example.com",
+    password: "password456"
+  }
+}
 
 export default function WelcomePage() {
   const router = useRouter()
@@ -18,6 +30,7 @@ export default function WelcomePage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
+
   const { login, loading, error, isAuthenticated, user } = useAuth()
   
   useEffect(() => {
@@ -33,6 +46,7 @@ export default function WelcomePage() {
     }
   }, [isAuthenticated, user, router])
   
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-transparent">
       <div className="w-full h-full flex flex-col md:flex-row max-w-6xl shadow-2xl rounded-2xl overflow-hidden">
