@@ -27,7 +27,7 @@ export default function SubjectManagerPage() {
         setLoading(false);
       })
       .catch(() => {
-        setError("Không thể tải danh sách môn học");
+        setError("Unable to load subject list");
         setLoading(false);
       });
   }, [page]);
@@ -40,7 +40,7 @@ export default function SubjectManagerPage() {
     e.preventDefault();
     setFormError(null);
     if (!form.subjectCode.trim() || !form.subjectName.trim()) {
-      setFormError("Vui lòng nhập đầy đủ thông tin!");
+      setFormError("Please enter all required information!");
       return;
     }
     setSubmitting(true);
@@ -55,7 +55,7 @@ export default function SubjectManagerPage() {
         setLoading(false);
       });
     } catch (err) {
-      setFormError("Thêm môn học thất bại!");
+      setFormError("Failed to add subject!");
     }
     setSubmitting(false);
   };
@@ -74,7 +74,7 @@ export default function SubjectManagerPage() {
     e.preventDefault();
     setEditError(null);
     if (!editForm.subjectCode.trim() || !editForm.subjectName.trim()) {
-      setEditError("Vui lòng nhập đầy đủ thông tin!");
+      setEditError("Please enter all required information!");
       return;
     }
     setEditSubmitting(true);
@@ -89,13 +89,13 @@ export default function SubjectManagerPage() {
         setLoading(false);
       });
     } catch (err) {
-      setEditError("Cập nhật môn học thất bại!");
+      setEditError("Failed to update subject!");
       setEditSubmitting(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa môn học này?")) return;
+    if (!window.confirm("Are you sure you want to delete this subject?")) return;
     try {
       await deleteSubject(id);
       setLoading(true);
@@ -105,11 +105,11 @@ export default function SubjectManagerPage() {
         setLoading(false);
       });
     } catch (err) {
-      alert("Xóa môn học thất bại!");
+      alert("Failed to delete subject!");
     }
   };
 
-  if (loading) return <div>Đang tải danh sách môn học...</div>;
+  if (loading) return <div>Loading subject list...</div>;
   if (error) return <div>{error}</div>;
 
   return (
@@ -117,18 +117,18 @@ export default function SubjectManagerPage() {
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800">Quản lý môn học</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Subject Management</h1>
             <button
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
               onClick={() => setShowForm((v) => !v)}
             >
-              {showForm ? "Đóng" : "Thêm môn học"}
+              {showForm ? "Close" : "Add Subject"}
             </button>
           </div>
           {showForm && (
             <form onSubmit={handleSubmit} className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border">
               <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mã môn học</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subject Code</label>
                 <input
                   type="text"
                   name="subjectCode"
@@ -139,7 +139,7 @@ export default function SubjectManagerPage() {
                 />
               </div>
               <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tên môn học</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
                 <input
                   type="text"
                   name="subjectName"
@@ -156,16 +156,16 @@ export default function SubjectManagerPage() {
                   className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium"
                   disabled={submitting}
                 >
-                  {submitting ? "Đang thêm..." : "Thêm môn học"}
+                  {submitting ? "Adding..." : "Add Subject"}
                 </button>
               </div>
             </form>
           )}
           {editingSubject && (
             <form onSubmit={handleEditSubmit} className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4 bg-yellow-50 p-4 rounded-lg border border-yellow-300">
-              <div className="md:col-span-2 text-lg font-semibold text-yellow-800 mb-2">Chỉnh sửa môn học</div>
+              <div className="md:col-span-2 text-lg font-semibold text-yellow-800 mb-2">Edit Subject</div>
               <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mã môn học</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subject Code</label>
                 <input
                   type="text"
                   name="subjectCode"
@@ -176,7 +176,7 @@ export default function SubjectManagerPage() {
                 />
               </div>
               <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tên môn học</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
                 <input
                   type="text"
                   name="subjectName"
@@ -194,14 +194,14 @@ export default function SubjectManagerPage() {
                   onClick={() => setEditingSubject(null)}
                   disabled={editSubmitting}
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg font-medium"
                   disabled={editSubmitting}
                 >
-                  {editSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+                  {editSubmitting ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </form>
@@ -210,11 +210,11 @@ export default function SubjectManagerPage() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Mã môn học</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Tên môn học</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Ngày tạo</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Ngày cập nhật</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Thao tác</th>
+                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Subject Code</th>
+                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Subject Name</th>
+                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Created At</th>
+                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Updated At</th>
+                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -229,14 +229,14 @@ export default function SubjectManagerPage() {
                         <button
                           onClick={() => handleEdit(subject)}
                           className="p-2 rounded hover:bg-yellow-100 transition-colors"
-                          title="Sửa môn học"
+                          title="Edit Subject"
                         >
                           <Pencil className="w-5 h-5 text-yellow-600" />
                         </button>
                         <button
                           onClick={() => handleDelete(subject._id)}
                           className="p-2 rounded hover:bg-red-100 transition-colors"
-                          title="Xóa môn học"
+                          title="Delete Subject"
                         >
                           <Trash className="w-5 h-5 text-red-600" />
                         </button>
@@ -245,7 +245,7 @@ export default function SubjectManagerPage() {
                   </tr>
                 ))}
                 {subjects.length === 0 && (
-                  <tr><td colSpan={4} className="text-center py-8 text-gray-500">Không có môn học nào.</td></tr>
+                  <tr><td colSpan={4} className="text-center py-8 text-gray-500">No subjects found.</td></tr>
                 )}
               </tbody>
             </table>
@@ -257,15 +257,15 @@ export default function SubjectManagerPage() {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
             >
-              Trang trước
+              Previous Page
             </button>
-            <span className="mx-2 text-gray-800">Trang {page} / {totalPage}</span>
+            <span className="mx-2 text-gray-800">Page {page} / {totalPage}</span>
             <button
               className="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium disabled:opacity-50"
               onClick={() => setPage((p) => Math.min(totalPage, p + 1))}
               disabled={page === totalPage}
             >
-              Trang sau
+              Next Page
             </button>
           </div>
         </div>

@@ -3,7 +3,7 @@
 import type React from "react"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Bell, Settings, LogOut, User, Shield } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface NavItemProps {
   href: string
@@ -34,6 +35,8 @@ interface NavbarProps {
 
 export function Navbar({ title, subtitle, role, navItems }: NavbarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { user } = useAuth()
 
   return (
     <div className="bg-white border-b border-gray-200 shadow-sm">
@@ -81,12 +84,24 @@ export function Navbar({ title, subtitle, role, navItems }: NavbarProps) {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Admin User</p>
-                    <p className="text-xs leading-none text-muted-foreground">admin@example.com</p>
+                    <p className="text-sm font-medium leading-none">
+                      {user?.role === "MANAGER"
+                        ? "Manager User"
+                        : user?.role === "ADMIN"
+                        ? "Admin User"
+                        : user?.role === "SUPERVISOR"
+                        ? "Supervisor User"
+                        : "User"}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.email || ""}
+                    </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => router.push("/profile")}
+                >
                   <User className="mr-2 h-4 w-4" />
                   <span>Hồ sơ</span>
                 </DropdownMenuItem>

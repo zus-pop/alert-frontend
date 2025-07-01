@@ -7,6 +7,8 @@ export interface SystemUser {
   lastName: string;
   role: 'ADMIN' | 'MANAGER' | 'SUPERVISOR';
   password?: string;
+  image?: string;
+  updatedAt?: string;
 }
 
 export interface SystemUserCreateRequest {
