@@ -1,12 +1,139 @@
 "use client";
 import React, { useEffect, useState, useMemo } from "react";
-import { fetchEnrollments, Enrollment } from "../../../services/enrollmentApi";
+import { fetchEnrollments, Enrollment, createEnrollment, updateEnrollment, deleteEnrollment } from "../../../services/enrollmentApi";
 import { fetchSubjects, Subject } from "../../../services/subjectApi";
 import { fetchCourses, Course } from "../../../services/courseApi";
 import { fetchAttendances, Attendance, updateAttendance } from "../../../services/attendanceApi";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "../../../components/ui/accordion";
 import { Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog";
+import { useToast } from "../../../hooks/use-toast";
+import { EnrollmentInput, GradeInput } from "../../../services/enrollmentApi";
+import { fetchStudents, Student } from "../../../services/studentApi";
+
+interface EnrollmentFormProps {
+  onSubmit: (data: EnrollmentInput) => void;
+  onCancel: () => void;
+  courses: Course[];
+  students: any[]; // Nếu có type Student thì dùng Student[]
+  subjectMap: { [id: string]: Subject };
+  initialData?: EnrollmentInput;
+}
+
+function EnrollmentForm({ onSubmit, onCancel, courses, students, subjectMap, initialData }: EnrollmentFormProps) {
+  const [form, setForm] = useState<EnrollmentInput>(
+    initialData || { courseId: "", studentId: "", grade: [] }
+  );
+
+  const addGrade = () => setForm((f: EnrollmentInput) => ({
+    ...f,
+    grade: [...f.grade, { type: "", score: 0, weight: 0 }]
+  }));
+
+  const removeGrade = (idx: number) => setForm((f: EnrollmentInput) => ({
+    ...f,
+    grade: f.grade.filter((_: GradeInput, i: number) => i !== idx)
+  }));
+
+  const updateGrade = (idx: number, key: keyof GradeInput, value: any) => setForm((f: EnrollmentInput) => ({
+    ...f,
+    grade: f.grade.map((g: GradeInput, i: number) => i === idx ? { ...g, [key]: value } : g)
+  }));
+
+  // Tạo danh sách subjectCode cho gợi ý
+  const subjectCodeOptions = courses.map(c => {
+    const subjectId = typeof c.subjectId === "string" ? c.subjectId : c.subjectId?._id;
+    return {
+      value: c._id,
+      label: subjectMap[subjectId]?.subjectCode || c._id
+    };
+  });
+
+  // Tạo danh sách student cho gợi ý
+  const studentOptions = students.map(s => ({
+    value: s._id,
+    label: `${s._id} - ${s.lastName} ${s.firstName}${s.email ? ` (${s.email})` : ""}`
+  }));
+
+  return (
+    <form
+      onSubmit={e => {
+        e.preventDefault();
+        onSubmit(form);
+      }}
+      className="space-y-4"
+    >
+      <div>
+        <label>Subject Code (courseId)</label>
+        <input
+          type="text"
+          value={form.courseId}
+          onChange={e => setForm(f => ({ ...f, courseId: e.target.value }))}
+          required
+          className="border px-2 py-1 w-full"
+          list="courseId-list"
+          placeholder="Nhập hoặc chọn subject code"
+        />
+        <datalist id="courseId-list">
+          {subjectCodeOptions.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </datalist>
+      </div>
+      <div>
+        <label>Student ID</label>
+        <input
+          type="text"
+          value={form.studentId}
+          onChange={e => setForm(f => ({ ...f, studentId: e.target.value }))}
+          required
+          className="border px-2 py-1 w-full"
+          list="studentId-list"
+          placeholder="Nhập hoặc chọn student ID"
+        />
+        <datalist id="studentId-list">
+          {studentOptions.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </datalist>
+      </div>
+      <div>
+        <label>Grade</label>
+        {form.grade.map((g, idx) => (
+          <div key={idx} className="flex gap-2 items-center mb-2">
+            <input
+              type="text"
+              placeholder="Type"
+              value={g.type}
+              onChange={e => updateGrade(idx, "type", e.target.value)}
+              className="border px-2 py-1"
+            />
+            <input
+              type="number"
+              placeholder="Score"
+              value={g.score}
+              onChange={e => updateGrade(idx, "score", Number(e.target.value))}
+              className="border px-2 py-1 w-20"
+            />
+            <input
+              type="number"
+              placeholder="Weight"
+              value={g.weight}
+              onChange={e => updateGrade(idx, "weight", Number(e.target.value))}
+              className="border px-2 py-1 w-20"
+            />
+            <button type="button" onClick={() => removeGrade(idx)} className="text-red-500">X</button>
+          </div>
+        ))}
+        <button type="button" onClick={addGrade} className="text-blue-600 mt-2">+ Thêm grade</button>
+      </div>
+      <div className="flex gap-2">
+        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Lưu</button>
+        <button type="button" className="px-4 py-2 bg-gray-300 rounded" onClick={onCancel}>Hủy</button>
+      </div>
+    </form>
+  );
+}
 
 export default function EnrollmentManagerPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -20,6 +147,11 @@ export default function EnrollmentManagerPage() {
   const [totalPage, setTotalPage] = useState(1);
   const [selectedStudent, setSelectedStudent] = useState<{id: string, name: string, enrolls: Enrollment[]} | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const { toast } = useToast();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingEnrollment, setEditingEnrollment] = useState<Enrollment | null>(null);
+  const [students, setStudents] = useState<Student[]>([]);
 
   const refetchAttendances = () => {
     setAttLoading(true);
@@ -44,6 +176,8 @@ export default function EnrollmentManagerPage() {
     fetchSubjects(1, 1000).then(res => setSubjects(res.data));
     // Fetch courses riêng
     fetchCourses().then(setCourses);
+    // Fetch students
+    fetchStudents(1, 1000).then(res => setStudents(res.data));
     // Fetch attendances
     refetchAttendances();
   }, [page]);
@@ -56,13 +190,6 @@ export default function EnrollmentManagerPage() {
     enrollmentByStudent[id].push(e);
   });
 
-  // Tạo subjectMap để tra cứu nhanh subjectCode
-  const subjectMap = useMemo(() => {
-    const map: { [id: string]: Subject } = {};
-    subjects.forEach(s => { map[s._id] = s; });
-    return map;
-  }, [subjects]);
-
   // Tạo courseMap để tra cứu nhanh subjectCode
   const courseMap = useMemo(() => {
     const map: { [id: string]: Course } = {};
@@ -70,12 +197,61 @@ export default function EnrollmentManagerPage() {
     return map;
   }, [courses]);
 
+  // Hàm thêm enrollment
+  async function handleAddEnrollment(data: EnrollmentInput) {
+    try {
+      await createEnrollment(data);
+      toast({ title: "Thêm enrollment thành công!" });
+      setShowAddModal(false);
+      // Refetch lại enrollments
+      fetchEnrollments(page, 100).then(res => setEnrollments(res.data));
+    } catch (err) {
+      toast({ title: "Thêm enrollment thất bại!", variant: "destructive" });
+    }
+  }
+  // Hàm sửa enrollment
+  async function handleEditEnrollment(id: string, data: EnrollmentInput) {
+    try {
+      await updateEnrollment(id, data);
+      toast({ title: "Cập nhật enrollment thành công!" });
+      setShowEditModal(false);
+      setEditingEnrollment(null);
+      fetchEnrollments(page, 100).then(res => setEnrollments(res.data));
+    } catch (err) {
+      toast({ title: "Cập nhật enrollment thất bại!", variant: "destructive" });
+    }
+  }
+  // Hàm xóa enrollment
+  async function handleDeleteEnrollment(id: string) {
+    if (!window.confirm("Bạn có chắc muốn xóa enrollment này?")) return;
+    try {
+      await deleteEnrollment(id);
+      toast({ title: "Xóa enrollment thành công!" });
+      fetchEnrollments(page, 100).then(res => setEnrollments(res.data));
+    } catch (err) {
+      toast({ title: "Xóa enrollment thất bại!", variant: "destructive" });
+    }
+  }
+
+  // Ở ngoài EnrollmentForm, tạo subjectMap và truyền vào
+  const subjectMap = useMemo(() => {
+    const map: { [id: string]: Subject } = {};
+    subjects.forEach(s => { map[s._id] = s; });
+    return map;
+  }, [subjects]);
+
   if (loading) return <div>Loading course enrollment list...</div>;
   if (error) return <div>{error}</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
+        {/* Nút thêm enrollment ở đầu */}
+        <div className="flex justify-end mb-4">
+          <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={() => setShowAddModal(true)}>
+            Thêm Enrollment
+          </button>
+        </div>
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-6">Course Enrollment Management</h1>
           <div className="overflow-x-auto">
@@ -317,6 +493,45 @@ export default function EnrollmentManagerPage() {
               Next Page
             </button>
           </div>
+          {/* Modal thêm enrollment */}
+          {showAddModal && (
+            <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Thêm Enrollment</DialogTitle>
+                </DialogHeader>
+                <EnrollmentForm
+                  onSubmit={handleAddEnrollment}
+                  onCancel={() => setShowAddModal(false)}
+                  courses={courses}
+                  students={students}
+                  subjectMap={subjectMap}
+                />
+              </DialogContent>
+            </Dialog>
+          )}
+          {/* Modal sửa enrollment */}
+          {showEditModal && editingEnrollment && (
+            <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Sửa Enrollment</DialogTitle>
+                </DialogHeader>
+                <EnrollmentForm
+                  initialData={{
+                    courseId: editingEnrollment.courseId,
+                    studentId: editingEnrollment.studentId._id,
+                    grade: editingEnrollment.grade as GradeInput[],
+                  }}
+                  onSubmit={data => handleEditEnrollment(editingEnrollment._id, data)}
+                  onCancel={() => setShowEditModal(false)}
+                  courses={courses}
+                  students={students}
+                  subjectMap={subjectMap}
+                />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
     </div>
