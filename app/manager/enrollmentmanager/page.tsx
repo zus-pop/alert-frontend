@@ -185,87 +185,103 @@ export default function EnrollmentManagerPage() {
                               <summary>
                                 {attendedCount}/{totalCount}
                               </summary>
-                              <table className="text-xs mt-2 border w-full">
-                                <thead>
-                                  <tr>
-                                    <th className="border px-2 py-1">Session</th>
-                                    <th className="border px-2 py-1">Status</th>
-                                    <th className="border px-2 py-1">Action</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {attendanceOfEnrollment.map(att => (
-                                    <tr key={att._id} className="hover:bg-gray-50">
-                                      <td className="border px-2 py-1">{att.sessionId}</td>
-                                      <td className="border px-2 py-1">
-                                        {att.status}
-                                        <div className="flex gap-2 mt-1">
-                                          {att.status === "NOT YET" && (
-                                            <>
-                                              <button
-                                                className="px-2 py-1 rounded text-xs bg-red-500 text-white flex items-center"
-                                                disabled={updatingId === att._id}
-                                                title="Đánh dấu vắng"
-                                                onClick={async () => {
-                                                  setUpdatingId(att._id);
-                                                  await updateAttendance(att._id, { status: "ABSENT" });
-                                                  await refetchAttendances();
-                                                  setUpdatingId(null);
-                                                }}
-                                              >
-                                                <span className="font-bold">✗</span>
-                                              </button>
-                                              <button
-                                                className="px-2 py-1 rounded text-xs bg-green-500 text-white flex items-center"
-                                                disabled={updatingId === att._id}
-                                                title="Điểm danh"
-                                                onClick={async () => {
-                                                  setUpdatingId(att._id);
-                                                  await updateAttendance(att._id, { status: "ATTENDED" });
-                                                  await refetchAttendances();
-                                                  setUpdatingId(null);
-                                                }}
-                                              >
-                                                <span className="font-bold">✓</span>
-                                              </button>
-                                            </>
-                                          )}
-                                          {att.status === "ATTENDED" && (
-                                            <button
-                                              className="px-2 py-1 rounded text-xs bg-red-500 text-white flex items-center"
-                                              disabled={updatingId === att._id}
-                                              title="Đánh dấu vắng"
-                                              onClick={async () => {
-                                                setUpdatingId(att._id);
-                                                await updateAttendance(att._id, { status: "ABSENT" });
-                                                await refetchAttendances();
-                                                setUpdatingId(null);
-                                              }}
-                                            >
-                                              <span className="font-bold">✗</span>
-                                            </button>
-                                          )}
-                                          {att.status === "ABSENT" && (
-                                            <button
-                                              className="px-2 py-1 rounded text-xs bg-green-500 text-white flex items-center"
-                                              disabled={updatingId === att._id}
-                                              title="Điểm danh"
-                                              onClick={async () => {
-                                                setUpdatingId(att._id);
-                                                await updateAttendance(att._id, { status: "ATTENDED" });
-                                                await refetchAttendances();
-                                                setUpdatingId(null);
-                                              }}
-                                            >
-                                              <span className="font-bold">✓</span>
-                                            </button>
-                                          )}
-                                        </div>
-                                      </td>
+                              <div className="max-h-96 overflow-y-auto mt-2">
+                                <table className="text-xs border w-full">
+                                  <thead>
+                                    <tr>
+                                      <th className="border px-2 py-1">Session</th>
+                                      <th className="border px-2 py-1">Status</th>
+                                      <th className="border px-2 py-1">Action</th>
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                                  </thead>
+                                  <tbody>
+                                    {(() => {
+                                      // Luôn sort lại attendance theo createdAt tăng dần trước khi render
+                                      const sortedAttendance = [...attendanceOfEnrollment].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                                      return sortedAttendance.map((att, idx) => (
+                                        <tr key={att._id} className="hover:bg-gray-50">
+                                          <td className="border px-2 py-1">{idx + 1}</td>
+                                          <td className="border px-2 py-1">
+                                            {att.status === "ATTENDED" && (
+                                              <span className="px-2 py-1 rounded-full bg-green-100 text-green-800 font-semibold text-xs">ATTENDED</span>
+                                            )}
+                                            {att.status === "ABSENT" && (
+                                              <span className="px-2 py-1 rounded-full bg-red-100 text-red-800 font-semibold text-xs">ABSENT</span>
+                                            )}
+                                            {att.status === "NOT YET" && (
+                                              <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 font-semibold text-xs">NOT YET</span>
+                                            )}
+                                          </td>
+                                          <td className="border px-2 py-1">
+                                            <div className="flex gap-2">
+                                              {att.status === "NOT YET" && (
+                                                <>
+                                                  <button
+                                                    className="px-2 py-1 rounded text-xs bg-red-500 text-white flex items-center"
+                                                    disabled={updatingId === att._id}
+                                                    title="Đánh dấu vắng"
+                                                    onClick={async () => {
+                                                      setUpdatingId(att._id);
+                                                      await updateAttendance(att._id, { status: "ABSENT" });
+                                                      await refetchAttendances();
+                                                      setUpdatingId(null);
+                                                    }}
+                                                  >
+                                                    <span className="font-bold">✗</span>
+                                                  </button>
+                                                  <button
+                                                    className="px-2 py-1 rounded text-xs bg-green-500 text-white flex items-center"
+                                                    disabled={updatingId === att._id}
+                                                    title="Điểm danh"
+                                                    onClick={async () => {
+                                                      setUpdatingId(att._id);
+                                                      await updateAttendance(att._id, { status: "ATTENDED" });
+                                                      await refetchAttendances();
+                                                      setUpdatingId(null);
+                                                    }}
+                                                  >
+                                                    <span className="font-bold">✓</span>
+                                                  </button>
+                                                </>
+                                              )}
+                                              {att.status === "ATTENDED" && (
+                                                <button
+                                                  className="px-2 py-1 rounded text-xs bg-red-500 text-white flex items-center"
+                                                  disabled={updatingId === att._id}
+                                                  title="Đánh dấu vắng"
+                                                  onClick={async () => {
+                                                    setUpdatingId(att._id);
+                                                    await updateAttendance(att._id, { status: "ABSENT" });
+                                                    await refetchAttendances();
+                                                    setUpdatingId(null);
+                                                  }}
+                                                >
+                                                  <span className="font-bold">✗</span>
+                                                </button>
+                                              )}
+                                              {att.status === "ABSENT" && (
+                                                <button
+                                                  className="px-2 py-1 rounded text-xs bg-green-500 text-white flex items-center"
+                                                  disabled={updatingId === att._id}
+                                                  title="Điểm danh"
+                                                  onClick={async () => {
+                                                    setUpdatingId(att._id);
+                                                    await updateAttendance(att._id, { status: "ATTENDED" });
+                                                    await refetchAttendances();
+                                                    setUpdatingId(null);
+                                                  }}
+                                                >
+                                                  <span className="font-bold">✓</span>
+                                                </button>
+                                              )}
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      ));
+                                    })()}
+                                  </tbody>
+                                </table>
+                              </div>
                             </details>
                           </td>
                         </tr>
