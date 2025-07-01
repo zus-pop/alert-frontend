@@ -143,17 +143,17 @@ export default function SubjectsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Quản lý Môn học</h2>
-          <p className="text-gray-600">Quản lý thông tin và dữ liệu môn học</p>
+          <h2 className="text-2xl font-bold text-gray-900">Subject Management</h2>
+          <p className="text-gray-600">Manage subject information and data</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm">
             <Download className="w-4 h-4 mr-2" />
-            Xuất dữ liệu
+            Export Data
           </Button>
           <Button variant="outline" size="sm">
             <Upload className="w-4 h-4 mr-2" />
-            Nhập dữ liệu
+            Import Data
           </Button>
           <Button 
             onClick={() => router.push('/admin/subjects/new')}
@@ -161,7 +161,7 @@ export default function SubjectsPage() {
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Thêm môn học
+            Add Subject
           </Button>
         </div>
       </div>
@@ -172,7 +172,7 @@ export default function SubjectsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Tổng số môn học</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Subjects</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
               </div>
               <div className="p-2 bg-primary/10 rounded-full">
@@ -185,7 +185,7 @@ export default function SubjectsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Môn học đang hoạt động</p>
+                <p className="text-sm font-medium text-muted-foreground">Active Subjects</p>
                 <p className="text-2xl font-bold text-emerald-600">{stats.active}</p>
               </div>
               <div className="p-2 bg-emerald-100 rounded-full">
@@ -198,7 +198,7 @@ export default function SubjectsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Môn học không hoạt động</p>
+                <p className="text-sm font-medium text-muted-foreground">Inactive Subjects</p>
                 <p className="text-2xl font-bold text-rose-600">{stats.inactive}</p>
               </div>
               <div className="p-2 bg-rose-100 rounded-full">
@@ -214,14 +214,14 @@ export default function SubjectsPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Danh sách môn học</CardTitle>
+              <CardTitle>Subject List</CardTitle>
               <CardDescription>
-                Quản lý thông tin môn học trong hệ thống
+                Manage subject information in the system
               </CardDescription>
             </div>
             <Button variant="outline" size="sm">
               <RefreshCw className="w-4 h-4 mr-2" />
-              Làm mới
+              Refresh
             </Button>
           </div>
         </CardHeader>
@@ -231,7 +231,7 @@ export default function SubjectsPage() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Tìm kiếm theo mã hoặc tên môn học..."
+                placeholder="Search by subject code or name..."
                 className="pl-8 w-full md:max-w-sm"
                 value={searchQuery}
                 onChange={handleSearchInputChange}
@@ -244,7 +244,7 @@ export default function SubjectsPage() {
               className="bg-blue-600 hover:bg-blue-700 mr-2"
             >
               <Search className="h-4 w-4 mr-1" />
-              Tìm theo mã
+              Search by Code
             </Button>
             <Button 
               variant="outline"
@@ -252,7 +252,7 @@ export default function SubjectsPage() {
               onClick={handleSearchByNameClick}
             >
               <Search className="h-4 w-4 mr-1" />
-              Tìm theo tên
+              Search by Name
             </Button>
           </div>
 
@@ -273,10 +273,10 @@ export default function SubjectsPage() {
               <Table>
                 <TableHeader className="bg-gray-50">
                   <TableRow>
-                    <TableHead className="w-[120px] font-semibold">Mã môn học</TableHead>
-                    <TableHead className="font-semibold">Tên môn học</TableHead>
-                    <TableHead className="w-[150px] font-semibold">Ngày tạo</TableHead>
-                    <TableHead className="text-right w-[100px] font-semibold">Thao tác</TableHead>
+                    <TableHead className="w-[120px] font-semibold">Subject Code</TableHead>
+                    <TableHead className="font-semibold">Subject Name</TableHead>
+                    <TableHead className="w-[150px] font-semibold">Created Date</TableHead>
+                    <TableHead className="text-right w-[100px] font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -301,18 +301,18 @@ export default function SubjectsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => router.push(`/admin/subjects/${subject._id}`)}>
                               <Pencil className="w-4 h-4 mr-2" />
-                              Chỉnh sửa
+                              Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-red-600" 
                               onClick={() => setSubjectToDelete(subject._id)}
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
-                              Xóa
+                              Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

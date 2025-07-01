@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, FormEvent } from "react"
+import { useState, FormEvent, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -18,7 +18,20 @@ export default function WelcomePage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
-  const { login, loading, error } = useAuth()
+  const { login, loading, error, isAuthenticated, user } = useAuth()
+  
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log("LoginPage: User already authenticated, redirecting to appropriate dashboard");
+      if (user.role === 'ADMIN') {
+        router.push('/admin/system-users');
+      } else if (user.role === 'SUPERVISOR') {
+        router.push('/supervisor');
+      } else if (user.role === 'MANAGER') {
+        router.push('/manager');
+      }
+    }
+  }, [isAuthenticated, user, router])
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-transparent">

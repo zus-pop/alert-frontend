@@ -82,7 +82,7 @@ export function useApiPost<T, R>(
 }
 
 // Generic hook for PUT requests
-export function useApiPut<T, R>(
+export function useApiPatch<T, R>(
   endpoint: string,
   options = {}
 ) {
@@ -91,7 +91,7 @@ export function useApiPut<T, R>(
   return useMutation({
     mutationFn: async ({ id, data }: { id: string, data: T }) => {
       try {
-        const response = await api.put<R>(`${endpoint}/${id}`, data);
+        const response = await api.patch<R>(`${endpoint}/${id}`, data);
         return response.data;
       } catch (error) {
         return handleApiError(error);

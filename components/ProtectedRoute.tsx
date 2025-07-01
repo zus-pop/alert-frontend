@@ -15,7 +15,6 @@ export default function ProtectedRoute({ children, allowedRoles = [] }: Protecte
   const { data: validToken, isLoading: tokenLoading } = useValidAccessToken();
   const router = useRouter();
 
-  // Ensure this runs on every render
   console.log("ProtectedRoute rendering - Auth state:", {
     isAuthenticated,
     user,
@@ -33,27 +32,72 @@ export default function ProtectedRoute({ children, allowedRoles = [] }: Protecte
       validToken: validToken ? "valid" : "invalid"
     });
     
-    // Only check after token validation has completed
     if (!loading && !tokenLoading) {
+      
+      // Check if user is on login or home page and redirect based on role
+      if (isAuthenticated && user && (window.location.pathname === '/' || window.location.pathname === '/login')) {
+        console.log("ProtectedRoute: Authenticated user trying to access login page, redirecting to dashboard");
+        if (user?.role === 'ADMIN') {
+          router.replace('/admin/system-users');
+          return;
+        } else if (user?.role === 'SUPERVISOR') {
+          router.replace('/supervisor');
+          return;
+        } else if (user?.role === 'MANAGER') {
+          router.replace('/manager');
+          return;
+        }
+      }
+
       if (!isAuthenticated || validToken === null) {
         console.log("ProtectedRoute: Redirecting to login");
-        router.push('/login');
-      } else if (allowedRoles.length > 0 && user && !allowedRoles.includes(user.role)) {
-        console.log("ProtectedRoute: Role mismatch, redirecting", user.role);
+        router.push('/');
+        return;
+      }
+      
+      if (user) {
+        const currentPath = window.location.pathname;
+        
+        const isAdminPath = currentPath.startsWith('/admin/system-users')
+        const isSupervisorPath = currentPath.startsWith('/supervisor');
+        const isManagerPath = currentPath.startsWith('/manager');
+        
         if (user.role === 'ADMIN') {
-          router.push('/admin');
-        } else if (user.role === 'STAFF') {
-          router.push('/supervisor');
+          if (!isAdminPath && (isSupervisorPath || isManagerPath)) {
+            console.log("ProtectedRoute: Admin accessing non-admin area, redirecting to admin");
+            router.push('/admin/system-users');
+            return;
+          }
+        } else if (user.role === 'SUPERVISOR') {
+          if (!isSupervisorPath && (isAdminPath || isManagerPath)) {
+            console.log("ProtectedRoute: Supervisor accessing non-supervisor area, redirecting to supervisor");
+            router.push('/supervisor');
+            return;
+          }
         } else if (user.role === 'MANAGER') {
-          router.push('/manager');
-        } else {
-          router.push('/');
+          if (!isManagerPath && (isAdminPath || isSupervisorPath)) {
+            console.log("ProtectedRoute: Manager accessing non-manager area, redirecting to manager");
+            router.push('/manager');
+            return;
+          }
+        }
+        
+        if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+          console.log("ProtectedRoute: Role mismatch for specific page, redirecting", user.role);
+          if (user.role === 'ADMIN') {
+            router.push('/admin/system-users');
+          } else if (user.role === 'SUPERVISOR') {
+            router.push('/supervisor');
+          } else if (user.role === 'MANAGER') {
+            router.push('/manager');
+          } else {
+            router.push('/');
+          }
         }
       }
     }
   }, [isAuthenticated, loading, user, allowedRoles, router, validToken, tokenLoading]);
 
-  // Show loading indicator while checking authentication or token
   if (loading || tokenLoading) {
     console.log("ProtectedRoute: Showing loading indicator");
     return (
@@ -63,19 +107,16 @@ export default function ProtectedRoute({ children, allowedRoles = [] }: Protecte
     );
   }
 
-  // Don't render children if not authenticated
   if (!isAuthenticated || validToken === null) {
     console.log("ProtectedRoute: Not authenticated, returning null");
     return null;
   }
 
-  // Don't render children if user doesn't have required role
   if (allowedRoles.length > 0 && user && !allowedRoles.includes(user.role)) {
     console.log("ProtectedRoute: User doesn't have required role, returning null");
     return null;
   }
 
-  // User is authenticated and has required role, render children
   console.log("ProtectedRoute: Authenticated with required role, rendering children");
   return <>{children}</>;
 }
