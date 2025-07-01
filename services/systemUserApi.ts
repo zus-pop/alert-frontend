@@ -44,25 +44,25 @@ export interface SystemUsersQueryParams {
 }
 
 export const getSystemUsers = async (params?: SystemUsersQueryParams): Promise<SystemUsersResponse> => {
-  const response = await api.get('/system-users', { params });
+  const response = await api.get('https://ai-alert-5ea310f83e0b.herokuapp.com/api/system-users', { params });
   return response.data;
 };
 
 export const getSystemUserById = async (id: string): Promise<SystemUser> => {
-  const response = await api.get(`/system-users/${id}`);
+  const response = await api.get(`https://ai-alert-5ea310f83e0b.herokuapp.com/api/system-users/${id}`);
   return response.data;
 };
 
 export const createSystemUser = async (userData: SystemUserCreateRequest): Promise<SystemUser> => {
-  const response = await api.post('/system-users', userData);
+  const response = await api.post('https://ai-alert-5ea310f83e0b.herokuapp.com/api/system-users', userData);
   return response.data;
 };
 
 export const updateSystemUser = async (id: string, userData: SystemUserUpdateRequest): Promise<SystemUser> => {
-  const response = await api.patch(`/system-users/${id}`, userData);
+  const response = await api.patch(`https://ai-alert-5ea310f83e0b.herokuapp.com/api/system-users/${id}`, userData);
   return response.data;
 };
 
 export const deleteSystemUser = async (id: string): Promise<void> => {
-  await api.delete(`/system-users/${id}`);
+  await api.delete(`https://ai-alert-5ea310f83e0b.herokuapp.com/api/system-users/${id}`);
 };

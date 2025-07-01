@@ -29,7 +29,7 @@ interface NavItemProps {
 interface NavbarProps {
   title: string
   subtitle?: string
-  role?: "admin" | "supervisor"
+  role?: "admin" | "manager" | "supervisor"
   navItems?: Array<NavItemProps>
 }
 
