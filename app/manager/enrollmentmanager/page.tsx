@@ -151,7 +151,14 @@ export default function EnrollmentManagerPage() {
                       return (
                         <tr key={enrollment._id} className="hover:bg-gray-50">
                           <td className="border border-gray-100 px-4 py-3 text-gray-800">
-                            {courseMap[enrollment.courseId]?.subjectId?.subjectCode || enrollment.courseId}
+                            {
+                              (() => {
+                                const course = courseMap[enrollment.courseId];
+                                if (!course) return enrollment.courseId;
+                                const subjectId = typeof course.subjectId === "string" ? course.subjectId : course.subjectId?._id;
+                                return subjectMap[subjectId]?.subjectCode || subjectId || enrollment.courseId;
+                              })()
+                            }
                           </td>
                           <td className="border border-gray-100 px-4 py-3 text-gray-800">{enrollment.enrollmentDate ? new Date(enrollment.enrollmentDate).toLocaleDateString() : ""}</td>
                           <td className="border border-gray-100 px-4 py-3 text-gray-800">
