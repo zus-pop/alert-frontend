@@ -29,6 +29,8 @@ export interface Student {
   status?: "Active" | "Inactive" | "Graduated" | "On Leave"
   currentTermNo?: number
   major?: string
+  // Avatar
+  image?: string
   // Parent information
   fatherName?: string
   fatherPhone?: string

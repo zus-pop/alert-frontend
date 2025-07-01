@@ -144,6 +144,22 @@ export const StudentForm: React.FC<StudentFormProps> = ({ student, onSubmit, onC
 
   return (
     <div className="bg-gray-100 p-6 rounded-lg">
+      {/* Avatar hiển thị ở đầu form khi edit */}
+      {student && (
+        <div className="flex justify-center mb-4">
+          {student.image ? (
+            <img
+              src={student.image}
+              alt={student.fullName}
+              className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-full flex items-center justify-center font-bold text-white text-3xl bg-purple-600 border-4 border-white shadow-lg">
+              {student.fullName?.[0] || 'N'}
+            </div>
+          )}
+        </div>
+      )}
       <h2 className="text-2xl font-bold mb-4 text-gray-800">{student ? "Edit Student" : "Add New Student"}</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">

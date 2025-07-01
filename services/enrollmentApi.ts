@@ -10,7 +10,13 @@ export interface Grade {
 export interface Enrollment {
   _id: string;
   courseId: string;
-  studentId: string;
+  studentId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    image?: string;
+  };
   enrollmentDate: string;
   grade: Grade[];
   status: string;

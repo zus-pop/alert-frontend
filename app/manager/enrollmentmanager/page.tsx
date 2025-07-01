@@ -1,14 +1,16 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { fetchEnrollments, Enrollment } from "../../../services/enrollmentApi";
-import { fetchStudents, Student } from "../../../services/studentApi";
+import { fetchSubjects, Subject } from "../../../services/subjectApi";
+import { fetchCourses, Course } from "../../../services/courseApi";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "../../../components/ui/accordion";
 import { Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog";
 
 export default function EnrollmentManagerPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -18,33 +20,44 @@ export default function EnrollmentManagerPage() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      fetchEnrollments(page, 100), // lấy nhiều để group
-      fetchStudents(1, 1000)
+      fetchEnrollments(page, 100)
     ])
-      .then(([enrollRes, studentRes]) => {
+      .then(([enrollRes]) => {
         setEnrollments(enrollRes.data);
         setTotalPage(enrollRes.totalPage);
-        setStudents(studentRes.data);
         setLoading(false);
       })
       .catch(() => {
         setError("Unable to load course enrollment list");
         setLoading(false);
       });
+    // Fetch subjects riêng
+    fetchSubjects(1, 1000).then(res => setSubjects(res.data));
+    // Fetch courses riêng
+    fetchCourses().then(setCourses);
   }, [page]);
 
-  // Group enrollments by studentId
+  // Group enrollments by studentId._id
   const enrollmentByStudent: { [studentId: string]: Enrollment[] } = {};
   enrollments.forEach((e) => {
-    if (!enrollmentByStudent[e.studentId]) enrollmentByStudent[e.studentId] = [];
-    enrollmentByStudent[e.studentId].push(e);
+    const id = e.studentId._id;
+    if (!enrollmentByStudent[id]) enrollmentByStudent[id] = [];
+    enrollmentByStudent[id].push(e);
   });
 
-  const getStudentInfo = (studentId: string) => {
-    const student = students.find(s => s._id === studentId);
-    if (!student) return { fullName: studentId, studentCode: "" };
-    return { fullName: `${student.firstName} ${student.lastName}`, studentCode: student.studentCode || "" };
-  };
+  // Tạo subjectMap để tra cứu nhanh subjectCode
+  const subjectMap = useMemo(() => {
+    const map: { [id: string]: Subject } = {};
+    subjects.forEach(s => { map[s._id] = s; });
+    return map;
+  }, [subjects]);
+
+  // Tạo courseMap để tra cứu nhanh subjectCode
+  const courseMap = useMemo(() => {
+    const map: { [id: string]: Course } = {};
+    courses.forEach(c => { map[c._id] = c; });
+    return map;
+  }, [courses]);
 
   if (loading) return <div>Loading course enrollment list...</div>;
   if (error) return <div>{error}</div>;
@@ -66,17 +79,27 @@ export default function EnrollmentManagerPage() {
               </thead>
               <tbody>
                 {Object.entries(enrollmentByStudent).map(([studentId, enrolls]) => {
-                  const info = getStudentInfo(studentId);
+                  const student = enrolls[0].studentId;
                   return (
                     <tr key={studentId} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="border border-gray-100 px-4 py-3 text-gray-800">{info.fullName}</td>
-                      <td className="border border-gray-100 px-4 py-3 text-center text-gray-800">{info.studentCode}</td>
+                      <td className="border border-gray-100 px-4 py-3 text-gray-800">
+                        <div className="flex items-center gap-2">
+                          {student.image && (
+                            <img src={student.image} alt="avatar" className="w-8 h-8 rounded-full object-cover border" />
+                          )}
+                          <div>
+                            <div className="font-semibold">{student.lastName} {student.firstName}</div>
+                            <div className="text-xs text-gray-500">{student.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="border border-gray-100 px-4 py-3 text-center text-gray-800">{/* studentCode nếu có */}</td>
                       <td className="border border-gray-100 px-4 py-3 text-center text-gray-800">{enrolls.length}</td>
                       <td className="border border-gray-100 px-4 py-3 text-center">
                         <button
                           className="text-blue-600 hover:text-blue-800 p-2"
                           title="View details"
-                          onClick={() => setSelectedStudent({id: studentId, name: info.fullName, enrolls})}
+                          onClick={() => setSelectedStudent({id: studentId, name: student.lastName + ' ' + student.firstName, enrolls})}
                         >
                           <Eye className="w-5 h-5" />
                         </button>
@@ -109,9 +132,27 @@ export default function EnrollmentManagerPage() {
                   <tbody>
                     {selectedStudent?.enrolls.map((enrollment) => (
                       <tr key={enrollment._id} className="hover:bg-gray-50">
-                        <td className="border border-gray-100 px-4 py-3 text-gray-800">{enrollment.courseId}</td>
+                        <td className="border border-gray-100 px-4 py-3 text-gray-800">
+                          {courseMap[enrollment.courseId]?.subjectId?.subjectCode || enrollment.courseId}
+                        </td>
                         <td className="border border-gray-100 px-4 py-3 text-gray-800">{enrollment.enrollmentDate ? new Date(enrollment.enrollmentDate).toLocaleDateString() : ""}</td>
-                        <td className="border border-gray-100 px-4 py-3 text-gray-800">{enrollment.status}</td>
+                        <td className="border border-gray-100 px-4 py-3 text-gray-800">
+                          {enrollment.status === "IN PROGRESS" && (
+                            <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 font-semibold text-xs">
+                              IN PROGRESS
+                            </span>
+                          )}
+                          {enrollment.status === "PASSED" && (
+                            <span className="px-2 py-1 rounded-full bg-green-100 text-green-800 font-semibold text-xs">
+                              PASSED
+                            </span>
+                          )}
+                          {enrollment.status === "NOT PASSED" && (
+                            <span className="px-2 py-1 rounded-full bg-red-100 text-red-800 font-semibold text-xs">
+                              NOT PASSED
+                            </span>
+                          )}
+                        </td>
                         <td className="border border-gray-100 px-4 py-3 text-gray-800">
                           <ul>
                             {enrollment.grade.map((g, idx) => (
