@@ -1,7 +1,5 @@
 import axios from "axios";
 
-const BASE_URL = "https://ai-alert-5ea310f83e0b.herokuapp.com";
-
 export interface Attendance {
   _id: string;
   enrollmentId: string;
@@ -11,15 +9,12 @@ export interface Attendance {
   updatedAt: string;
 }
 
-export interface AttendanceListResponse {
-  data: Attendance[];
-  totalItems: number;
-  totalPage: number;
+export async function fetchAttendances(page = 1, limit = 2000, sortBy = "createdAt", order = "asc"): Promise<{ data: Attendance[] }> {
+  const res = await axios.get(`https://ai-alert-5ea310f83e0b.herokuapp.com/api/attendances?page=${page}&limit=${limit}&sortBy=${sortBy}&order=${order}`);
+  return { data: res.data.data };
 }
 
-export async function fetchAttendances(page: number = 1, limit: number = 100): Promise<AttendanceListResponse> {
-  const res = await axios.get(`${BASE_URL}/api/attendances`, {
-    params: { page, limit }
-  });
+export async function updateAttendance(id: string, data: { status: string }) {
+  const res = await axios.patch(`https://ai-alert-5ea310f83e0b.herokuapp.com/api/attendances/${id}`, data);
   return res.data;
 } 
