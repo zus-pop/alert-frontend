@@ -6,6 +6,7 @@ import { Users, UserCog, Shield, Settings, BookOpen, SwatchBook } from "lucide-r
 import { useSystemUsers } from '@/hooks/useSystemUsers'
 import { useSubjects } from '@/hooks/useSubjects'
 import { useSemesters } from '@/hooks/useSemesters'
+import ProtectedRoute from "@/components/ProtectedRoute"
 
 export default function AdminLayout({
   children,
@@ -99,14 +100,16 @@ export default function AdminLayout({
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <Navbar
-        title="Admin Dashboard"
-        subtitle="Quản lý người dùng và phân quyền hệ thống"
-        role="admin"
-        navItems={adminNavItems}
-      />
-      <main className="max-w-screen-2xl mx-auto p-6">{children}</main>
-    </div>
+    <ProtectedRoute allowedRoles={["ADMIN"]}>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <Navbar
+          title="Admin Dashboard"
+          subtitle="Managing AI-Generated Alerts and Student Assistance Requests"
+          role="admin"
+          navItems={adminNavItems}
+        />
+        <main className="max-w-screen-2xl mx-auto p-6">{children}</main>
+      </div>
+    </ProtectedRoute>
   )
 }

@@ -19,9 +19,9 @@ export default function AdminDashboard() {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div className="bg-white rounded-lg border p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Chào mừng đến với Admin Dashboard</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Admin Dashboard</h2>
         <p className="text-gray-600">
-          Quản lý toàn bộ hệ thống người dùng và phân quyền. Chọn một trong các tab bên trên để bắt đầu.
+          Manage the entire user system and permissions. Select one of the tabs above to get started.
         </p>
       </div>
 
@@ -31,14 +31,14 @@ export default function AdminDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-sm font-medium">Tổng người dùng</p>
+                <p className="text-blue-100 text-sm font-medium">Total Users</p>
                 <p className="text-3xl font-bold">{stats.totalUsers}</p>
               </div>
               <Users className="w-8 h-8 text-blue-200" />
             </div>
             <div className="mt-4 flex items-center text-sm">
               <TrendingUp className="w-4 h-4 mr-1" />
-              <span className="text-blue-100">+{stats.newThisMonth} tháng này</span>
+              <span className="text-blue-100">+{stats.newThisMonth} this month</span>
             </div>
           </CardContent>
         </Card>
@@ -47,14 +47,14 @@ export default function AdminDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-emerald-100 text-sm font-medium">Đang hoạt động</p>
+                <p className="text-emerald-100 text-sm font-medium">Active</p>
                 <p className="text-3xl font-bold">{stats.activeUsers}</p>
               </div>
               <Activity className="w-8 h-8 text-emerald-200" />
             </div>
             <div className="mt-4 flex items-center text-sm">
               <span className="text-emerald-100">
-                {Math.round((stats.activeUsers / stats.totalUsers) * 100)}% tổng số
+                {Math.round((stats.activeUsers / stats.totalUsers) * 100)}% of total
               </span>
             </div>
           </CardContent>
@@ -64,13 +64,13 @@ export default function AdminDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-100 text-sm font-medium">Giám sát viên</p>
+                <p className="text-purple-100 text-sm font-medium">Supervisors</p>
                 <p className="text-3xl font-bold">{stats.supervisors}</p>
               </div>
               <Shield className="w-8 h-8 text-purple-200" />
             </div>
             <div className="mt-4 flex items-center text-sm">
-              <span className="text-purple-100">Quản lý: {stats.managers}</span>
+              <span className="text-purple-100">Managers: {stats.managers}</span>
             </div>
           </CardContent>
         </Card>
@@ -79,13 +79,13 @@ export default function AdminDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-orange-100 text-sm font-medium">Cần chú ý</p>
+                <p className="text-orange-100 text-sm font-medium">Need Attention</p>
                 <p className="text-3xl font-bold">{stats.totalUsers - stats.activeUsers}</p>
               </div>
               <AlertCircle className="w-8 h-8 text-orange-200" />
             </div>
             <div className="mt-4 flex items-center text-sm">
-              <span className="text-orange-100">Tài khoản không hoạt động</span>
+              <span className="text-orange-100">Inactive accounts</span>
             </div>
           </CardContent>
         </Card>
@@ -99,14 +99,14 @@ export default function AdminDashboard() {
               <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                 <Users className="w-8 h-8 text-blue-600" />
               </div>
-              <CardTitle className="text-xl">Quản lý Students</CardTitle>
-              <CardDescription>Quản lý tài khoản và thông tin học sinh</CardDescription>
+              <CardTitle className="text-xl">Manage Students</CardTitle>
+              <CardDescription>Manage student accounts and information</CardDescription>
             </CardHeader>
             <CardContent className="text-center">
               <div className="text-3xl font-bold text-blue-600 mb-2">{stats.students}</div>
-              <p className="text-sm text-gray-600">học sinh đang hoạt động</p>
+              <p className="text-sm text-gray-600">active students</p>
               <Button className="w-full mt-4" variant="outline">
-                Xem chi tiết
+                View Details
               </Button>
             </CardContent>
           </Link>
@@ -118,14 +118,14 @@ export default function AdminDashboard() {
               <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
                 <UserCog className="w-8 h-8 text-emerald-600" />
               </div>
-              <CardTitle className="text-xl">Quản lý Managers</CardTitle>
-              <CardDescription>Quản lý tài khoản và quyền hạn quản lý</CardDescription>
+              <CardTitle className="text-xl">Manage Managers</CardTitle>
+              <CardDescription>Manage manager accounts and permissions</CardDescription>
             </CardHeader>
             <CardContent className="text-center">
               <div className="text-3xl font-bold text-emerald-600 mb-2">{stats.managers}</div>
-              <p className="text-sm text-gray-600">quản lý đang hoạt động</p>
+              <p className="text-sm text-gray-600">active managers</p>
               <Button className="w-full mt-4" variant="outline">
-                Xem chi tiết
+                View Details
               </Button>
             </CardContent>
           </Link>
@@ -137,14 +137,14 @@ export default function AdminDashboard() {
               <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
                 <Shield className="w-8 h-8 text-purple-600" />
               </div>
-              <CardTitle className="text-xl">Quản lý Supervisors</CardTitle>
-              <CardDescription>Quản lý tài khoản và quyền hạn giám sát</CardDescription>
+              <CardTitle className="text-xl">Manage Supervisors</CardTitle>
+              <CardDescription>Manage supervisor accounts and permissions</CardDescription>
             </CardHeader>
             <CardContent className="text-center">
               <div className="text-3xl font-bold text-purple-600 mb-2">{stats.supervisors}</div>
-              <p className="text-sm text-gray-600">giám sát viên đang hoạt động</p>
+              <p className="text-sm text-gray-600">active supervisors</p>
               <Button className="w-full mt-4" variant="outline">
-                Xem chi tiết
+                View Details
               </Button>
             </CardContent>
           </Link>
@@ -156,13 +156,13 @@ export default function AdminDashboard() {
               <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
                 <BookOpen className="w-8 h-8 text-amber-600" />
               </div>
-              <CardTitle className="text-xl">Quản lý Môn học</CardTitle>
-              <CardDescription>Quản lý thông tin các môn học</CardDescription>
+              <CardTitle className="text-xl">Manage Subjects</CardTitle>
+              <CardDescription>Manage subject information</CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              <div className="text-gray-600 mb-2">Xem và quản lý tất cả các môn học trong hệ thống</div>
+              <div className="text-gray-600 mb-2">View and manage all subjects in the system</div>
               <Button className="w-full mt-4" variant="outline">
-                Xem chi tiết
+                View Details
               </Button>
             </CardContent>
           </Link>
@@ -173,8 +173,8 @@ export default function AdminDashboard() {
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Phân bố vai trò</CardTitle>
-            <CardDescription>Tỷ lệ người dùng theo từng vai trò</CardDescription>
+            <CardTitle className="text-lg">Role Distribution</CardTitle>
+            <CardDescription>User ratio by role</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -229,30 +229,30 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Hoạt động gần đây</CardTitle>
-            <CardDescription>Các thay đổi mới nhất trong hệ thống</CardDescription>
+            <CardTitle className="text-lg">Recent Activity</CardTitle>
+            <CardDescription>Latest changes in the system</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Student mới được tạo</p>
-                  <p className="text-xs text-gray-500">2 phút trước</p>
+                  <p className="text-sm font-medium">New Student created</p>
+                  <p className="text-xs text-gray-500">2 minutes ago</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Cập nhật quyền Manager</p>
-                  <p className="text-xs text-gray-500">15 phút trước</p>
+                  <p className="text-sm font-medium">Manager permissions updated</p>
+                  <p className="text-xs text-gray-500">15 minutes ago</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Supervisor bị vô hiệu hóa</p>
-                  <p className="text-xs text-gray-500">1 giờ trước</p>
+                  <p className="text-sm font-medium">Supervisor disabled</p>
+                  <p className="text-xs text-gray-500">1 hour ago</p>
                 </div>
               </div>
             </div>
@@ -260,5 +260,6 @@ export default function AdminDashboard() {
         </Card>
       </div>
     </div>
+  
   )
 }
