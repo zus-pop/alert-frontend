@@ -108,7 +108,19 @@ export function useValidAccessToken() {
       removeLocalStorageItem('refresh_token');
       return null;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchInterval: 4 * 60 * 1000, // 4 minutes (refresh before expiration)
+    enabled: () => {
+      // Only run this query if tokens exist
+      const accessToken = getLocalStorageItem('access_token');
+      const refreshToken = getLocalStorageItem('refresh_token');
+      return !!(accessToken || refreshToken);
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes (reduced from 5)
+    refetchInterval: (data) => {
+      // Only refetch if we have valid tokens
+      const accessToken = getLocalStorageItem('access_token');
+      const refreshToken = getLocalStorageItem('refresh_token');
+      return (accessToken || refreshToken) ? 2 * 60 * 1000 : false; // 2 minutes or disabled
+    },
+    retry: 1,
   });
 }

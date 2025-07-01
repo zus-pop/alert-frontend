@@ -159,9 +159,9 @@ export default function SemestersPage() {
     const start = new Date(startDate);
     const end = new Date(endDate);
     
-    if (start > now) return { status: 'upcoming', label: 'Sắp tới', color: 'bg-blue-100 text-blue-800' };
-    if (end < now) return { status: 'completed', label: 'Đã kết thúc', color: 'bg-gray-100 text-gray-800' };
-    return { status: 'active', label: 'Đang diễn ra', color: 'bg-green-100 text-green-800' };
+    if (start > now) return { status: 'upcoming', label: 'Upcoming', color: 'bg-blue-100 text-blue-800' };
+    if (end < now) return { status: 'completed', label: 'Completed', color: 'bg-gray-100 text-gray-800' };
+    return { status: 'active', label: 'Active', color: 'bg-green-100 text-green-800' };
   };
 
   return (
@@ -169,13 +169,13 @@ export default function SemestersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Quản lý Học kỳ</h2>
-          <p className="text-gray-600">Quản lý thông tin các học kỳ trong hệ thống</p>
+          <h2 className="text-2xl font-bold text-gray-900">Semester Management</h2>
+          <p className="text-gray-600">Manage semester information in the system</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm">
             <Download className="w-4 h-4 mr-2" />
-            Xuất dữ liệu
+            Export Data
           </Button>
           <Button 
             onClick={() => router.push('/admin/semesters/new')}
@@ -183,7 +183,7 @@ export default function SemestersPage() {
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Thêm học kỳ
+            Add Semester
           </Button>
         </div>
       </div>
@@ -194,7 +194,7 @@ export default function SemestersPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Tổng số học kỳ</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Semesters</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
               </div>
               <div className="p-2 bg-primary/10 rounded-full">
@@ -207,7 +207,7 @@ export default function SemestersPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Đang diễn ra</p>
+                <p className="text-sm font-medium text-muted-foreground">Active</p>
                 <p className="text-2xl font-bold text-emerald-600">{stats.active}</p>
               </div>
               <div className="p-2 bg-emerald-100 rounded-full">
@@ -220,7 +220,7 @@ export default function SemestersPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Sắp tới</p>
+                <p className="text-sm font-medium text-muted-foreground">Upcoming</p>
                 <p className="text-2xl font-bold text-blue-600">{stats.upcoming}</p>
               </div>
               <div className="p-2 bg-blue-100 rounded-full">
@@ -233,7 +233,7 @@ export default function SemestersPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Đã kết thúc</p>
+                <p className="text-sm font-medium text-muted-foreground">Completed</p>
                 <p className="text-2xl font-bold text-gray-600">{stats.completed}</p>
               </div>
               <div className="p-2 bg-gray-100 rounded-full">
@@ -249,14 +249,14 @@ export default function SemestersPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Danh sách học kỳ</CardTitle>
+              <CardTitle>Semester List</CardTitle>
               <CardDescription>
-                Quản lý thông tin học kỳ trong hệ thống
+                Manage semester information in the system
               </CardDescription>
             </div>
             <Button variant="outline" size="sm">
               <RefreshCw className="w-4 h-4 mr-2" />
-              Làm mới
+              Refresh
             </Button>
           </div>
         </CardHeader>
@@ -266,7 +266,7 @@ export default function SemestersPage() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Tìm kiếm theo tên học kỳ..."
+                placeholder="Search by semester name..."
                 className="pl-8 w-full md:max-w-sm"
                 value={searchQuery}
                 onChange={handleSearchInputChange}
@@ -279,7 +279,7 @@ export default function SemestersPage() {
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Search className="h-4 w-4 mr-2" />
-              Tìm kiếm
+              Search
             </Button>
           </div>
 
@@ -300,11 +300,11 @@ export default function SemestersPage() {
               <Table>
                 <TableHeader className="bg-gray-50">
                   <TableRow>
-                    <TableHead className="font-semibold">Tên học kỳ</TableHead>
-                    <TableHead className="font-semibold">Ngày bắt đầu</TableHead>
-                    <TableHead className="font-semibold">Ngày kết thúc</TableHead>
-                    <TableHead className="font-semibold">Trạng thái</TableHead>
-                    <TableHead className="text-right font-semibold">Thao tác</TableHead>
+                    <TableHead className="font-semibold">Semester Name</TableHead>
+                    <TableHead className="font-semibold">Start Date</TableHead>
+                    <TableHead className="font-semibold">End Date</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="text-right font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -326,18 +326,18 @@ export default function SemestersPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => router.push(`/admin/semesters/${semester._id}`)}>
                                 <Pencil className="w-4 h-4 mr-2" />
-                                Chỉnh sửa
+                                Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 className="text-red-600"
                                 onClick={() => setSemesterToDelete(semester._id)}
                               >
                                 <Trash2 className="w-4 h-4 mr-2" />
-                                Xóa
+                                Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

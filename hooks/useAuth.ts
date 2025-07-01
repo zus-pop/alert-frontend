@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { login as loginApi, getUserInfo, logout as logoutApi } from '@/services/authApi';
 import { useRouter } from 'next/navigation';
 
@@ -11,6 +11,7 @@ interface LoginCredentials {
 
 export function useLogin() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
@@ -19,10 +20,18 @@ export function useLogin() {
       console.log('useLogin: Login successful', result);
       return result;
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: () => {
       console.log('useLogin: Login mutation success');
-      // The login was successful, we can now get user info
-      // Redirect will be handled in the auth context
+      
+      // Reset tất cả cache trước khi chuyển sang user mới
+      queryClient.removeQueries();
+      
+      // Reset cụ thể cache user
+      queryClient.removeQueries({ queryKey: ['userInfo'] });
+      queryClient.setQueryData(['userInfo'], null);
+      
+      // Force refetch dữ liệu mới
+      queryClient.invalidateQueries({ queryKey: ['userInfo'] });
     },
     onError: (error) => {
       console.error('useLogin: Login mutation error', error);
@@ -31,8 +40,14 @@ export function useLogin() {
 }
 
 export function useUserInfo(enabled = true) {
+  // Lấy token hiện tại để dùng làm query key
+  const currentToken = typeof localStorage !== 'undefined' 
+    ? localStorage.getItem('access_token') 
+    : null;
+  
   return useQuery({
-    queryKey: ['userInfo'],
+    // Sử dụng token làm một phần của query key
+    queryKey: ['userInfo', currentToken],
     queryFn: async () => {
       console.log('useUserInfo: Fetching user info');
       try {
@@ -44,14 +59,17 @@ export function useUserInfo(enabled = true) {
         throw error;
       }
     },
-    enabled: enabled, // Only fetch if enabled (user is authenticated)
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: enabled && !!currentToken, 
+    staleTime: 1000 * 30, // Giảm xuống chỉ 30 giây
+    gcTime: 0, // Không cache sau khi unmount
     retry: 1,
+    refetchOnMount: true, // Luôn refetch khi mount
   });
 }
 
 export function useLogout() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: () => {
@@ -60,8 +78,17 @@ export function useLogout() {
       return Promise.resolve();
     },
     onSuccess: () => {
-      console.log('useLogout: Logout successful, redirecting to login');
-      router.push('/login');
+      console.log('useLogout: Logout successful');
+      
+      // Reset toàn bộ cache liên quan đến user
+      queryClient.removeQueries({ queryKey: ['userInfo'] });
+      queryClient.setQueryData(['userInfo'], null);
+      
+      // Buộc client không sử dụng cache cũ
+      queryClient.invalidateQueries({ queryKey: ['userInfo'] });
+      
+      console.log('useLogout: Cache cleared, redirecting to login');
+      router.push('/');
     },
   });
 }

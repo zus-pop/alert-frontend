@@ -161,8 +161,25 @@ export const getUserInfo = async (): Promise<UserData> => {
 };
 
 export const logout = () => {
+  console.log('authApi: Logging out and clearing all tokens');
   removeLocalStorageItem('access_token');
   removeLocalStorageItem('refresh_token');
+  
+  // Clear any other potential auth-related localStorage items
+  removeLocalStorageItem('user');
+  removeLocalStorageItem('authState');
+  
+  // Clear all localStorage items that might contain sensitive data
+  if (typeof window !== 'undefined') {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('token') || key.includes('auth') || key.includes('user'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+  }
 };
 
 export const isAuthenticated = (): boolean => {
