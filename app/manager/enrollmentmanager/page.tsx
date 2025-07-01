@@ -315,6 +315,7 @@ export default function EnrollmentManagerPage() {
                       <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Status</th>
                       <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Grade</th>
                       <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Attendance</th>
+                      <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -466,6 +467,25 @@ export default function EnrollmentManagerPage() {
                                 </table>
                               </div>
                             </details>
+                          </td>
+                          <td className="border border-gray-100 px-4 py-3 text-gray-800">
+                            <div className="flex gap-2">
+                              <button
+                                className="text-blue-600 hover:underline mr-2"
+                                onClick={() => {
+                                  setEditingEnrollment(enrollment);
+                                  setShowEditModal(true);
+                                }}
+                              >
+                                Sửa
+                              </button>
+                              <button
+                                className="text-red-600 hover:underline"
+                                onClick={() => handleDeleteEnrollment(enrollment._id)}
+                              >
+                                Xóa
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
