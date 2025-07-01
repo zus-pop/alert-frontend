@@ -18,11 +18,6 @@ const supervisorNavItems = [
     label: "Course Enrollment Management",
     icon: <ClipboardList className="w-4 h-4" />,
   },
-  {
-    href: "/manager/attendancemanager",
-    label: "Attendance Management",
-    icon: <CheckSquare className="w-4 h-4" />,
-  },
 ]
 
 export default function SupervisorLayout({
