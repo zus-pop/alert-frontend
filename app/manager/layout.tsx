@@ -5,22 +5,22 @@ import { AlertTriangle, MessageSquare, BarChart3, Users, BookOpen, ClipboardList
 const supervisorNavItems = [
   {
     href: "/manager/studentmanager",
-    label: "Quản lý sinh viên",
+    label: "Student Management",
     icon: <Users className="w-4 h-4" />,
   },
   {
     href: "/manager/subjectmanager",
-    label: "Quản lý môn học",
+    label: "Subject Management",
     icon: <BookOpen className="w-4 h-4" />,
   },
   {
-    href: "/manager/registrationmanager",
-    label: "Quản lý đăng ký môn",
+    href: "/manager/enrollmentmanager",
+    label: "Course Enrollment Management",
     icon: <ClipboardList className="w-4 h-4" />,
   },
   {
     href: "/manager/attendancemanager",
-    label: "Quản lý điểm danh",
+    label: "Attendance Management",
     icon: <CheckSquare className="w-4 h-4" />,
   },
 ]
@@ -33,8 +33,8 @@ export default function SupervisorLayout({
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-red-50">
       <Navbar
-        title="Supervisor Dashboard"
-        subtitle="Xử lý cảnh báo AI và hỗ trợ học sinh"
+        title="Manager Dashboard"
+        subtitle="Manage students and subjects"
         role="supervisor"
         navItems={supervisorNavItems}
       />

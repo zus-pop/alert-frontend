@@ -5,6 +5,36 @@ import { StudentRow } from "../StudentRow/page"
 import { fetchStudents, Student as ApiStudent, createStudent, CreateStudentPayload, updateStudent, restoreStudent, deleteStudent } from "../../../services/studentApi"
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from "../../../components/ui/dialog"
 
+interface Student {
+  id: string;
+  fullName: string;
+  studentId: string;
+  gender: "Male" | "Female" | "Other";
+  email: string;
+  password: string;
+  subjects: string[];
+  scores: { [subject: string]: number };
+  attendance: { [subject: string]: number };
+  dateOfBirth?: string;
+  idCard?: string;
+  address?: string;
+  phoneNumber?: string;
+  dateOfIssue?: string;
+  placeOfIssue?: string;
+  memberCode?: string;
+  mode?: string;
+  status?: "Active" | "Inactive" | "Graduated" | "On Leave";
+  currentTermNo?: number;
+  major?: string;
+  image?: string;
+  fatherName?: string;
+  fatherPhone?: string;
+  fatherJob?: string;
+  motherName?: string;
+  motherPhone?: string;
+  motherJob?: string;
+}
+
 export default function StudentManagerPage() {
   const [students, setStudents] = useState<ApiStudent[]>([])
   const [loading, setLoading] = useState(true)
@@ -45,7 +75,7 @@ export default function StudentManagerPage() {
         setDeletedStudents(res.data.filter((s: ApiStudent) => s.isDeleted))
       })
       .catch(() => {
-        setError("Không thể tải danh sách sinh viên")
+        setError("Unable to load student list")
         setLoading(false)
       })
   }, [page])
@@ -59,7 +89,7 @@ export default function StudentManagerPage() {
     setFormError(null)
     // Validate studentCode
     if (!/^[a-zA-Z0-9]{8}$/.test(form.studentCode)) {
-      setFormError("Student code phải đúng 8 ký tự chữ và số!")
+      setFormError("Student code must be exactly 8 alphanumeric characters!")
       return
     }
     setSubmitting(true)
@@ -80,7 +110,7 @@ export default function StudentManagerPage() {
         setLoading(false)
       })
     } catch (err) {
-      setFormError("Thêm sinh viên thất bại!")
+      setFormError("Failed to add student!")
     }
     setSubmitting(false)
   }
@@ -108,7 +138,7 @@ export default function StudentManagerPage() {
     e.preventDefault()
     setEditError(null)
     if (!/^[a-zA-Z0-9]{8}$/.test(editForm.studentCode)) {
-      setEditError("Student code phải đúng 8 ký tự chữ và số!")
+      setEditError("Student code must be exactly 8 alphanumeric characters!")
       return
     }
     setEditSubmitting(true)
@@ -128,13 +158,13 @@ export default function StudentManagerPage() {
         setLoading(false)
       })
     } catch (err) {
-      setEditError("Cập nhật sinh viên thất bại!")
+      setEditError("Failed to update student!")
       setEditSubmitting(false)
     }
   }
 
   const handleDelete = async (studentId: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa sinh viên này?")) return;
+    if (!window.confirm("Are you sure you want to delete this student?")) return;
     try {
       await deleteStudent(studentId)
       setLoading(true)
@@ -145,7 +175,7 @@ export default function StudentManagerPage() {
         setLoading(false)
       })
     } catch (err) {
-      alert("Xóa sinh viên thất bại!")
+      alert("Failed to delete student!")
     }
   }
 
@@ -165,30 +195,44 @@ export default function StudentManagerPage() {
         setLoading(false)
       })
     } catch (err) {
-      alert("Khôi phục sinh viên thất bại!")
+      alert("Failed to restore student!")
     }
   }
 
-  if (loading) return <div>Đang tải danh sách sinh viên...</div>
+  if (loading) return <div>Loading student list...</div>
   if (error) return <div>{error}</div>
+
+  // Map students từ API sang Student
+  const mappedStudents = students.map((s) => ({
+    id: s._id,
+    fullName: `${s.firstName} ${s.lastName}`,
+    studentId: s.studentCode || "",
+    gender: s.gender as any,
+    email: s.email,
+    password: s.password || "",
+    subjects: [],
+    scores: {},
+    attendance: {},
+    image: s.image,
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800">Quản lý sinh viên</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Student Management</h1>
             <button
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
               onClick={() => setShowForm((v) => !v)}
             >
-              {showForm ? "Đóng" : "Thêm sinh viên"}
+              {showForm ? "Close" : "Add Student"}
             </button>
           </div>
           {showForm && (
             <form onSubmit={handleSubmit} className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border">
               <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mã sinh viên</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Student Code</label>
                 <input
                   type="text"
                   name="studentCode"
@@ -200,7 +244,7 @@ export default function StudentManagerPage() {
                 />
               </div>
               <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Giới tính</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
                 <select
                   name="gender"
                   value={form.gender}
@@ -208,13 +252,13 @@ export default function StudentManagerPage() {
                   className="px-3 py-2 border border-gray-300 rounded-lg"
                   required
                 >
-                  <option value="Male">Nam</option>
-                  <option value="Female">Nữ</option>
-                  <option value="Other">Khác</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
               <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Họ</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                 <input
                   type="text"
                   name="firstName"
@@ -225,7 +269,7 @@ export default function StudentManagerPage() {
                 />
               </div>
               <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tên</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
                 <input
                   type="text"
                   name="lastName"
@@ -253,7 +297,7 @@ export default function StudentManagerPage() {
                   className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium"
                   disabled={submitting}
                 >
-                  {submitting ? "Đang thêm..." : "Thêm sinh viên"}
+                  {submitting ? "Adding..." : "Add Student"}
                 </button>
               </div>
             </form>
@@ -261,11 +305,11 @@ export default function StudentManagerPage() {
           <Dialog open={!!editingStudent} onOpenChange={(open) => { if (!open) setEditingStudent(null) }}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Chỉnh sửa sinh viên</DialogTitle>
+                <DialogTitle>Edit Student</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleEditSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-1 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mã sinh viên</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Student Code</label>
                   <input
                     type="text"
                     name="studentCode"
@@ -277,7 +321,7 @@ export default function StudentManagerPage() {
                   />
                 </div>
                 <div className="md:col-span-1 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Giới tính</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
                   <select
                     name="gender"
                     value={editForm.gender}
@@ -285,13 +329,13 @@ export default function StudentManagerPage() {
                     className="px-3 py-2 border border-gray-300 rounded-lg"
                     required
                   >
-                    <option value="Male">Nam</option>
-                    <option value="Female">Nữ</option>
-                    <option value="Other">Khác</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
                 <div className="md:col-span-1 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Họ</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                   <input
                     type="text"
                     name="firstName"
@@ -302,7 +346,7 @@ export default function StudentManagerPage() {
                   />
                 </div>
                 <div className="md:col-span-1 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
                   <input
                     type="text"
                     name="lastName"
@@ -331,14 +375,14 @@ export default function StudentManagerPage() {
                     onClick={() => setEditingStudent(null)}
                     disabled={editSubmitting}
                   >
-                    Hủy
+                    Cancel
                   </button>
                   <button
                     type="submit"
                     className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg font-medium"
                     disabled={editSubmitting}
                   >
-                    {editSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+                    {editSubmitting ? "Updating..." : "Update Changes"}
                   </button>
                 </DialogFooter>
               </form>
@@ -349,13 +393,13 @@ export default function StudentManagerPage() {
               className={`px-3 py-1 rounded text-sm font-medium ${showDeleted ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-700'} mr-2`}
               onClick={() => setShowDeleted(false)}
             >
-              Danh sách sinh viên
+              Student List
             </button>
             <button
               className={`px-3 py-1 rounded text-sm font-medium ${showDeleted ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
               onClick={() => setShowDeleted(true)}
             >
-              Xem sinh viên đã xóa
+              View Deleted Students
             </button>
           </div>
           {showDeleted ? (
@@ -363,16 +407,16 @@ export default function StudentManagerPage() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-100">
-                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Họ và Tên</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Mã số sinh viên</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Giới tính</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Name</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Student Code</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Gender</th>
                     <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Email</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Khôi phục</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Restore</th>
                   </tr>
                 </thead>
                 <tbody>
                   {deletedStudents.length === 0 && (
-                    <tr><td colSpan={5} className="text-center py-8 text-gray-500">Không có sinh viên đã xóa.</td></tr>
+                    <tr><td colSpan={5} className="text-center py-8 text-gray-500">No deleted students.</td></tr>
                   )}
                   {deletedStudents.map((student) => (
                     <tr key={student._id} className="hover:bg-gray-50">
@@ -385,7 +429,7 @@ export default function StudentManagerPage() {
                           className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium"
                           onClick={() => handleRestore(student._id)}
                         >
-                          Khôi phục
+                          Restore
                         </button>
                       </td>
                     </tr>
@@ -398,11 +442,11 @@ export default function StudentManagerPage() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-100">
-                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Họ và Tên</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Mã số sinh viên</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Giới tính</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Name</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Student Code</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Gender</th>
                     <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Email</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Thao tác</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -430,7 +474,7 @@ export default function StudentManagerPage() {
             </div>
           )}
           {students.length === 0 && (
-            <div className="text-center py-8 text-gray-500">Không có sinh viên nào.</div>
+            <div className="text-center py-8 text-gray-500">No students found.</div>
           )}
           {/* Pagination */}
           <div className="flex justify-center items-center gap-2 mt-6">
@@ -439,15 +483,15 @@ export default function StudentManagerPage() {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
             >
-              Trang trước
+              Previous Page
             </button>
-            <span className="mx-2 text-gray-800">Trang {page} / {totalPage}</span>
+            <span className="mx-2 text-gray-800">Page {page} / {totalPage}</span>
             <button
               className="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium disabled:opacity-50"
               onClick={() => setPage((p) => Math.min(totalPage, p + 1))}
               disabled={page === totalPage}
             >
-              Trang sau
+              Next Page
             </button>
           </div>
         </div>
