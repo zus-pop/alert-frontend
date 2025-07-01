@@ -3,6 +3,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { fetchEnrollments, Enrollment } from "../../../services/enrollmentApi";
 import { fetchSubjects, Subject } from "../../../services/subjectApi";
 import { fetchCourses, Course } from "../../../services/courseApi";
+import { fetchAttendances, Attendance, updateAttendance } from "../../../services/attendanceApi";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "../../../components/ui/accordion";
 import { Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog";
@@ -11,11 +12,19 @@ export default function EnrollmentManagerPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [attendances, setAttendances] = useState<Attendance[]>([]);
+  const [attLoading, setAttLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPage, setTotalPage] = useState(1);
   const [selectedStudent, setSelectedStudent] = useState<{id: string, name: string, enrolls: Enrollment[]} | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const refetchAttendances = () => {
+    setAttLoading(true);
+    fetchAttendances(1, 2000).then(res => setAttendances(res.data)).finally(() => setAttLoading(false));
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -35,6 +44,8 @@ export default function EnrollmentManagerPage() {
     fetchSubjects(1, 1000).then(res => setSubjects(res.data));
     // Fetch courses riêng
     fetchCourses().then(setCourses);
+    // Fetch attendances
+    refetchAttendances();
   }, [page]);
 
   // Group enrollments by studentId._id
@@ -115,55 +126,151 @@ export default function EnrollmentManagerPage() {
           </div>
           {/* Modal xem chi tiết đăng ký */}
           <Dialog open={!!selectedStudent} onOpenChange={open => { if (!open) setSelectedStudent(null); }}>
-            <DialogContent className="max-w-3xl w-full bg-white rounded-lg shadow-xl">
+            <DialogContent className="max-w-6xl w-full bg-white rounded-lg shadow-xl">
               <DialogHeader>
                 <DialogTitle>Enrollment details for {selectedStudent?.name}</DialogTitle>
               </DialogHeader>
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse mt-2">
+                <table className="w-full border-collapse mt-2 min-w-[900px]">
                   <thead>
                     <tr className="bg-gray-100">
                       <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Subject Code</th>
                       <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Enrollment Date</th>
                       <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Status</th>
                       <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Grade</th>
+                      <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Attendance</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedStudent?.enrolls.map((enrollment) => (
-                      <tr key={enrollment._id} className="hover:bg-gray-50">
-                        <td className="border border-gray-100 px-4 py-3 text-gray-800">
-                          {courseMap[enrollment.courseId]?.subjectId?.subjectCode || enrollment.courseId}
-                        </td>
-                        <td className="border border-gray-100 px-4 py-3 text-gray-800">{enrollment.enrollmentDate ? new Date(enrollment.enrollmentDate).toLocaleDateString() : ""}</td>
-                        <td className="border border-gray-100 px-4 py-3 text-gray-800">
-                          {enrollment.status === "IN PROGRESS" && (
-                            <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 font-semibold text-xs">
-                              IN PROGRESS
-                            </span>
-                          )}
-                          {enrollment.status === "PASSED" && (
-                            <span className="px-2 py-1 rounded-full bg-green-100 text-green-800 font-semibold text-xs">
-                              PASSED
-                            </span>
-                          )}
-                          {enrollment.status === "NOT PASSED" && (
-                            <span className="px-2 py-1 rounded-full bg-red-100 text-red-800 font-semibold text-xs">
-                              NOT PASSED
-                            </span>
-                          )}
-                        </td>
-                        <td className="border border-gray-100 px-4 py-3 text-gray-800">
-                          <ul>
-                            {enrollment.grade.map((g, idx) => (
-                              <li key={idx}>
-                                <span className="font-medium">{g.type}:</span> {g.score !== null ? g.score : "-"} (weight {g.weight})
-                              </li>
-                            ))}
-                          </ul>
-                        </td>
-                      </tr>
-                    ))}
+                    {selectedStudent?.enrolls.map((enrollment) => {
+                      const attendanceOfEnrollment = attendances.filter(
+                        att => att.enrollmentId === enrollment._id
+                      );
+                      const attendedCount = attendanceOfEnrollment.filter(att => att.status !== "NOT YET").length;
+                      const totalCount = attendanceOfEnrollment.length;
+                      return (
+                        <tr key={enrollment._id} className="hover:bg-gray-50">
+                          <td className="border border-gray-100 px-4 py-3 text-gray-800">
+                            {courseMap[enrollment.courseId]?.subjectId?.subjectCode || enrollment.courseId}
+                          </td>
+                          <td className="border border-gray-100 px-4 py-3 text-gray-800">{enrollment.enrollmentDate ? new Date(enrollment.enrollmentDate).toLocaleDateString() : ""}</td>
+                          <td className="border border-gray-100 px-4 py-3 text-gray-800">
+                            {enrollment.status === "IN PROGRESS" && (
+                              <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 font-semibold text-xs">
+                                IN PROGRESS
+                              </span>
+                            )}
+                            {enrollment.status === "PASSED" && (
+                              <span className="px-2 py-1 rounded-full bg-green-100 text-green-800 font-semibold text-xs">
+                                PASSED
+                              </span>
+                            )}
+                            {enrollment.status === "NOT PASSED" && (
+                              <span className="px-2 py-1 rounded-full bg-red-100 text-red-800 font-semibold text-xs">
+                                NOT PASSED
+                              </span>
+                            )}
+                          </td>
+                          <td className="border border-gray-100 px-4 py-3 text-gray-800">
+                            <ul>
+                              {enrollment.grade.map((g, idx) => (
+                                <li key={idx}>
+                                  <span className="font-medium">{g.type}:</span> {g.score !== null ? g.score : "-"} (weight {g.weight})
+                                </li>
+                              ))}
+                            </ul>
+                          </td>
+                          <td className="border border-gray-100 px-4 py-3 text-gray-800">
+                            <details>
+                              <summary>
+                                {attendedCount}/{totalCount}
+                              </summary>
+                              <table className="text-xs mt-2 border w-full">
+                                <thead>
+                                  <tr>
+                                    <th className="border px-2 py-1">Session</th>
+                                    <th className="border px-2 py-1">Status</th>
+                                    <th className="border px-2 py-1">Action</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {attendanceOfEnrollment.map(att => (
+                                    <tr key={att._id} className="hover:bg-gray-50">
+                                      <td className="border px-2 py-1">{att.sessionId}</td>
+                                      <td className="border px-2 py-1">
+                                        {att.status}
+                                        <div className="flex gap-2 mt-1">
+                                          {att.status === "NOT YET" && (
+                                            <>
+                                              <button
+                                                className="px-2 py-1 rounded text-xs bg-red-500 text-white flex items-center"
+                                                disabled={updatingId === att._id}
+                                                title="Đánh dấu vắng"
+                                                onClick={async () => {
+                                                  setUpdatingId(att._id);
+                                                  await updateAttendance(att._id, { status: "ABSENT" });
+                                                  await refetchAttendances();
+                                                  setUpdatingId(null);
+                                                }}
+                                              >
+                                                <span className="font-bold">✗</span>
+                                              </button>
+                                              <button
+                                                className="px-2 py-1 rounded text-xs bg-green-500 text-white flex items-center"
+                                                disabled={updatingId === att._id}
+                                                title="Điểm danh"
+                                                onClick={async () => {
+                                                  setUpdatingId(att._id);
+                                                  await updateAttendance(att._id, { status: "ATTENDED" });
+                                                  await refetchAttendances();
+                                                  setUpdatingId(null);
+                                                }}
+                                              >
+                                                <span className="font-bold">✓</span>
+                                              </button>
+                                            </>
+                                          )}
+                                          {att.status === "ATTENDED" && (
+                                            <button
+                                              className="px-2 py-1 rounded text-xs bg-red-500 text-white flex items-center"
+                                              disabled={updatingId === att._id}
+                                              title="Đánh dấu vắng"
+                                              onClick={async () => {
+                                                setUpdatingId(att._id);
+                                                await updateAttendance(att._id, { status: "ABSENT" });
+                                                await refetchAttendances();
+                                                setUpdatingId(null);
+                                              }}
+                                            >
+                                              <span className="font-bold">✗</span>
+                                            </button>
+                                          )}
+                                          {att.status === "ABSENT" && (
+                                            <button
+                                              className="px-2 py-1 rounded text-xs bg-green-500 text-white flex items-center"
+                                              disabled={updatingId === att._id}
+                                              title="Điểm danh"
+                                              onClick={async () => {
+                                                setUpdatingId(att._id);
+                                                await updateAttendance(att._id, { status: "ATTENDED" });
+                                                await refetchAttendances();
+                                                setUpdatingId(null);
+                                              }}
+                                            >
+                                              <span className="font-bold">✓</span>
+                                            </button>
+                                          )}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </details>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
