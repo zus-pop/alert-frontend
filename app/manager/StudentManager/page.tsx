@@ -5,6 +5,36 @@ import { StudentRow } from "../StudentRow/page"
 import { fetchStudents, Student as ApiStudent, createStudent, CreateStudentPayload, updateStudent, restoreStudent, deleteStudent } from "../../../services/studentApi"
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from "../../../components/ui/dialog"
 
+interface Student {
+  id: string;
+  fullName: string;
+  studentId: string;
+  gender: "Male" | "Female" | "Other";
+  email: string;
+  password: string;
+  subjects: string[];
+  scores: { [subject: string]: number };
+  attendance: { [subject: string]: number };
+  dateOfBirth?: string;
+  idCard?: string;
+  address?: string;
+  phoneNumber?: string;
+  dateOfIssue?: string;
+  placeOfIssue?: string;
+  memberCode?: string;
+  mode?: string;
+  status?: "Active" | "Inactive" | "Graduated" | "On Leave";
+  currentTermNo?: number;
+  major?: string;
+  image?: string;
+  fatherName?: string;
+  fatherPhone?: string;
+  fatherJob?: string;
+  motherName?: string;
+  motherPhone?: string;
+  motherJob?: string;
+}
+
 export default function StudentManagerPage() {
   const [students, setStudents] = useState<ApiStudent[]>([])
   const [loading, setLoading] = useState(true)
@@ -171,6 +201,20 @@ export default function StudentManagerPage() {
 
   if (loading) return <div>Loading student list...</div>
   if (error) return <div>{error}</div>
+
+  // Map students từ API sang Student
+  const mappedStudents = students.map((s) => ({
+    id: s._id,
+    fullName: `${s.firstName} ${s.lastName}`,
+    studentId: s.studentCode || "",
+    gender: s.gender as any,
+    email: s.email,
+    password: s.password || "",
+    subjects: [],
+    scores: {},
+    attendance: {},
+    image: s.image,
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
