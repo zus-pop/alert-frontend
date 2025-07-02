@@ -35,6 +35,7 @@ interface NavbarProps {
 
 export function Navbar({ title, subtitle, role, navItems }: NavbarProps) {
   const pathname = usePathname()
+  const router = useRouter()
 
   const { user, logout } = useAuth()
 
@@ -86,7 +87,7 @@ export function Navbar({ title, subtitle, role, navItems }: NavbarProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src="/placeholder.svg?height=40&width=40" alt="Avatar" />
+                    <AvatarImage src={user?.image} alt="Avatar" />
                     <AvatarFallback>{getInitials()}</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -105,7 +106,8 @@ export function Navbar({ title, subtitle, role, navItems }: NavbarProps) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => router.push("/profile")}
+                  onClick={() => 
+                    router.push("/profile")}
                 >
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
