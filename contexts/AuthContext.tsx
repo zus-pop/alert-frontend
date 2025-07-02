@@ -12,6 +12,7 @@ interface User {
   email: string;
   role: string;
   name?: string;
+  image?: string;
 }
 
 interface AuthContextType {
@@ -118,6 +119,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setError(null);
     console.log('3. Auth state reset');
     
+     localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  sessionStorage.clear();
     // Thực hiện logout mutation
     try {
       await logoutMutation.mutateAsync();
@@ -125,28 +129,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (err) {
       console.error('Logout mutation failed:', err);
     }
+
     
-    // Xóa localStorage và sessionStorage
-    localStorage.clear(); // Xóa tất cả, không chỉ token
-    sessionStorage.clear();
-    console.log('6. All storage cleared');
-    
-    // Reset all queries trước khi clear
-    queryClient.resetQueries();
-    console.log('7. All queries reset');
-    
-    // Thêm thời gian để đảm bảo mọi thay đổi được áp dụng
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    // Force clear tất cả cache
-    queryClient.clear();
-    queryClient.getQueryCache().clear();
-    queryClient.getMutationCache().clear();
-    console.log('8. All caches cleared');
-    
-    // Force revalidation
-    window.location.href = '/';
-    // Không dùng router.push vì nó có thể vẫn dùng state cũ
+   queryClient.removeQueries({ queryKey: ['userInfo'], exact: false });
+  queryClient.invalidateQueries({ queryKey: ['userInfo'], exact: false });
+   queryClient.clear(); // Clear toàn bộ cache (nếu cần)
+  console.log('🧹 Đã clear cache user');
+
+  // 6. Chuyển hướng về trang login/home
+  window.location.href = '/';
   };
 
   useEffect(() => {
