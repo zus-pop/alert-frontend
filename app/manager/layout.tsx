@@ -3,7 +3,7 @@
 import type React from "react"
 import { Navbar } from "@/components/navbar"
 
-import { AlertTriangle, MessageSquare, BarChart3 } from "lucide-react"
+import { AlertTriangle, MessageSquare, BarChart3, Users, BookOpen, ClipboardList } from "lucide-react"
 import ProtectedRoute from "@/components/ProtectedRoute"
 
 
