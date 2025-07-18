@@ -1,5 +1,4 @@
-import axios from "axios";
-const BASE_URL = "https://ai-alert-5ea310f83e0b.herokuapp.com";
+import { api } from './api';
 
 export interface Grade {
   type: string;
@@ -41,20 +40,20 @@ export interface EnrollmentListResponse {
 }
 
 export async function fetchEnrollments(page: number = 1, limit: number = 10): Promise<EnrollmentListResponse> {
-  const res = await axios.get(`${BASE_URL}/api/enrollments`, {
+  const res = await api.get('/enrollments', {
     params: { page, limit }
   });
   return res.data;
 }
 
 export async function createEnrollment(data: EnrollmentInput) {
-  return axios.post(`${BASE_URL}/api/enrollments`, data);
+  return api.post('/enrollments', data);
 }
 
 export async function updateEnrollment(id: string, data: EnrollmentInput) {
-  return axios.patch(`${BASE_URL}/api/enrollments/${id}`, data);
+  return api.patch(`/enrollments/${id}`, data);
 }
 
 export async function deleteEnrollment(id: string) {
-  return axios.delete(`${BASE_URL}/api/enrollments/${id}`);
+  return api.delete(`/enrollments/${id}`);
 } 

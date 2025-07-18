@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const BASE_URL = "https://ai-alert-5ea310f83e0b.herokuapp.com";
+import { api } from './api';
 
 export interface Student {
   _id: string;
@@ -25,7 +23,7 @@ export interface StudentListResponse {
 }
 
 export async function fetchStudents(page: number = 1, limit: number = 10): Promise<StudentListResponse> {
-  const res = await axios.get(`${BASE_URL}/api/students`, {
+  const res = await api.get('/students', {
     params: { page, limit }
   });
   return res.data;
@@ -40,21 +38,21 @@ export interface CreateStudentPayload {
 }
 
 export async function createStudent(data: CreateStudentPayload) {
-  const res = await axios.post(`${BASE_URL}/api/students`, data);
+  const res = await api.post('/students', data);
   return res.data;
 }
 
 export async function updateStudent(id: string, data: Partial<CreateStudentPayload>) {
-  const res = await axios.patch(`${BASE_URL}/api/students/${id}`, data);
+  const res = await api.patch(`/students/${id}`, data);
   return res.data;
 }
 
 export async function restoreStudent(id: string) {
-  const res = await axios.patch(`${BASE_URL}/api/students/${id}/restore`);
+  const res = await api.patch(`/students/${id}/restore`);
   return res.data;
 }
 
 export async function deleteStudent(id: string) {
-  const res = await axios.delete(`${BASE_URL}/api/students/${id}`);
+  const res = await api.delete(`/students/${id}`);
   return res.data;
 } 

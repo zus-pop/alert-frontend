@@ -36,22 +36,29 @@ export default function ProtectedRoute({ children, allowedRoles = [] }: Protecte
       
       // Check if user is on login or home page and redirect based on role
       if (isAuthenticated && user && (window.location.pathname === '/' || window.location.pathname === '/login')) {
-        console.log("ProtectedRoute: Authenticated user trying to access login page, redirecting to dashboard");
+        const currentPath = String(window.location.pathname);
         if (user?.role === 'ADMIN') {
-          router.replace('/admin/system-users');
-          return;
+          if (currentPath !== '/admin/system-users') {
+            router.replace('/admin/system-users');
+            return;
+          }
         } else if (user?.role === 'SUPERVISOR') {
-          router.replace('/supervisor');
-          return;
+          if (currentPath !== '/supervisor') {
+            router.replace('/supervisor');
+            return;
+          }
         } else if (user?.role === 'MANAGER') {
-          router.replace('/manager');
-          return;
+          if (currentPath !== '/manager') {
+            router.replace('/manager');
+            return;
+          }
         }
       }
 
       if (!isAuthenticated || validToken === null) {
-        console.log("ProtectedRoute: Redirecting to login");
-        router.push('/');
+        if (window.location.pathname !== '/') {
+          router.push('/');
+        }
         return;
       }
       
@@ -63,34 +70,30 @@ export default function ProtectedRoute({ children, allowedRoles = [] }: Protecte
         const isManagerPath = currentPath.startsWith('/manager');
         
         if (user.role === 'ADMIN') {
-          if (!isAdminPath && (isSupervisorPath || isManagerPath)) {
-            console.log("ProtectedRoute: Admin accessing non-admin area, redirecting to admin");
+          if (!isAdminPath && (isSupervisorPath || isManagerPath) && window.location.pathname !== '/admin/system-users') {
             router.push('/admin/system-users');
             return;
           }
         } else if (user.role === 'SUPERVISOR') {
-          if (!isSupervisorPath && (isAdminPath || isManagerPath)) {
-            console.log("ProtectedRoute: Supervisor accessing non-supervisor area, redirecting to supervisor");
+          if (!isSupervisorPath && (isAdminPath || isManagerPath) && window.location.pathname !== '/supervisor') {
             router.push('/supervisor');
             return;
           }
         } else if (user.role === 'MANAGER') {
-          if (!isManagerPath && (isAdminPath || isSupervisorPath)) {
-            console.log("ProtectedRoute: Manager accessing non-manager area, redirecting to manager");
+          if (!isManagerPath && (isAdminPath || isSupervisorPath) && window.location.pathname !== '/manager') {
             router.push('/manager');
             return;
           }
         }
         
         if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-          console.log("ProtectedRoute: Role mismatch for specific page, redirecting", user.role);
-          if (user.role === 'ADMIN') {
+          if (user.role === 'ADMIN' && window.location.pathname !== '/admin/system-users') {
             router.push('/admin/system-users');
-          } else if (user.role === 'SUPERVISOR') {
+          } else if (user.role === 'SUPERVISOR' && window.location.pathname !== '/supervisor') {
             router.push('/supervisor');
-          } else if (user.role === 'MANAGER') {
+          } else if (user.role === 'MANAGER' && window.location.pathname !== '/manager') {
             router.push('/manager');
-          } else {
+          } else if (window.location.pathname !== '/') {
             router.push('/');
           }
         }

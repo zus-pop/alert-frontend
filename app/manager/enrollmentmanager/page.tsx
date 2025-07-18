@@ -40,14 +40,16 @@ function EnrollmentForm({ onSubmit, onCancel, courses, students, subjectMap, ini
     grade: f.grade.map((g: GradeInput, i: number) => i === idx ? { ...g, [key]: value } : g)
   }));
 
-  // Tạo danh sách subjectCode cho gợi ý
-  const subjectCodeOptions = courses.map(c => {
-    const subjectId = typeof c.subjectId === "string" ? c.subjectId : c.subjectId?._id;
-    return {
-      value: c._id,
-      label: subjectMap[subjectId]?.subjectCode || c._id
-    };
-  });
+  // Tạo danh sách subjectCode duy nhất từ courses
+  const subjectCodeOptions = courses
+    .map(c => {
+      const subjectId = typeof c.subjectId === "string" ? c.subjectId : c.subjectId?._id;
+      return {
+        courseId: c._id,
+        subjectCode: subjectMap[subjectId]?.subjectCode || c._id
+      };
+    })
+    .filter((v, i, a) => a.findIndex(t => t.subjectCode === v.subjectCode) === i);
 
   // Tạo danh sách student cho gợi ý
   const studentOptions = students.map(s => ({
@@ -55,30 +57,40 @@ function EnrollmentForm({ onSubmit, onCancel, courses, students, subjectMap, ini
     label: `${s._id} - ${s.lastName} ${s.firstName}${s.email ? ` (${s.email})` : ""}`
   }));
 
+  // Lấy subjectCode hiện tại từ courseId
+  const selectedSubjectCode = subjectCodeOptions.find(opt => opt.courseId === form.courseId)?.subjectCode || "";
+
   return (
     <form
       onSubmit={e => {
         e.preventDefault();
-        onSubmit(form);
+        // Map subjectCode sang courseId nếu user chọn subjectCode
+        let courseId = form.courseId;
+        // Nếu courseId không phải là _id, mà là subjectCode, thì map lại
+        const found = subjectCodeOptions.find(opt => opt.subjectCode === courseId);
+        if (found) courseId = found.courseId;
+        onSubmit({ ...form, courseId });
       }}
       className="space-y-4"
     >
       <div>
-        <label>Subject Code (courseId)</label>
-        <input
-          type="text"
-          value={form.courseId}
-          onChange={e => setForm(f => ({ ...f, courseId: e.target.value }))}
+        <label>Subject Code</label>
+        <select
+          value={selectedSubjectCode}
+          onChange={e => {
+            const selected = subjectCodeOptions.find(opt => opt.subjectCode === e.target.value);
+            setForm(f => ({ ...f, courseId: selected?.courseId || "" }));
+          }}
           required
           className="border px-2 py-1 w-full"
-          list="courseId-list"
-          placeholder="Nhập hoặc chọn subject code"
-        />
-        <datalist id="courseId-list">
+        >
+          <option value="">Chọn subject code</option>
           {subjectCodeOptions.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
+            <option key={opt.subjectCode} value={opt.subjectCode}>
+              {opt.subjectCode}
+            </option>
           ))}
-        </datalist>
+        </select>
       </div>
       <div>
         <label>Student ID</label>

@@ -1,5 +1,4 @@
-import axios from "axios";
-const BASE_URL = "https://ai-alert-5ea310f83e0b.herokuapp.com";
+import { api } from './api';
 
 export interface Course {
   _id: string;
@@ -20,6 +19,6 @@ export interface Course {
 }
 
 export async function fetchCourses(): Promise<Course[]> {
-  const res = await axios.get(`${BASE_URL}/api/courses`);
+  const res = await api.get('/courses');
   return res.data.data;
 } 
