@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchSubjects, Subject, createSubject, updateSubject, deleteSubject } from "../../../services/subjectApi";
 import { Pencil, Trash } from "lucide-react";
+import Select from 'react-select';
 
 export default function SubjectManagerPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -10,11 +11,11 @@ export default function SubjectManagerPage() {
   const [page, setPage] = useState(1);
   const [totalPage, setTotalPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ subjectCode: "", subjectName: "" });
+  const [form, setForm] = useState({ subjectCode: "", subjectName: "", prerequisite: [] as string[] });
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
-  const [editForm, setEditForm] = useState({ subjectCode: "", subjectName: "" });
+  const [editForm, setEditForm] = useState({ subjectCode: "", subjectName: "", prerequisite: [] as string[] });
   const [editError, setEditError] = useState<string | null>(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
 
@@ -32,8 +33,12 @@ export default function SubjectManagerPage() {
       });
   }, [page]);
 
+  // Hàm handleInputChange cho input text
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,9 +50,13 @@ export default function SubjectManagerPage() {
     }
     setSubmitting(true);
     try {
-      await createSubject(form);
+      await createSubject({
+        subjectCode: form.subjectCode,
+        subjectName: form.subjectName,
+        prerequisite: form.prerequisite
+      });
       setShowForm(false);
-      setForm({ subjectCode: "", subjectName: "" });
+      setForm({ subjectCode: "", subjectName: "", prerequisite: [] });
       setLoading(true);
       fetchSubjects(page, 10).then((res) => {
         setSubjects(res.data);
@@ -62,13 +71,15 @@ export default function SubjectManagerPage() {
 
   const handleEdit = (subject: Subject) => {
     setEditingSubject(subject);
-    setEditForm({ subjectCode: subject.subjectCode, subjectName: subject.subjectName });
+    setEditForm({
+      subjectCode: subject.subjectCode,
+      subjectName: subject.subjectName,
+      prerequisite: (subject.prerequisite || []).map((p: any) => typeof p === 'string' ? p : p._id || p.subjectCode)
+    });
     setEditError(null);
   };
 
-  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
-  };
+  // Không cần handleEditInputChange cho prerequisite nữa
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +90,11 @@ export default function SubjectManagerPage() {
     }
     setEditSubmitting(true);
     try {
-      await updateSubject(editingSubject?._id!, editForm);
+      await updateSubject(editingSubject?._id!, {
+        subjectCode: editForm.subjectCode,
+        subjectName: editForm.subjectName,
+        prerequisite: editForm.prerequisite
+      });
       setEditingSubject(null);
       setEditSubmitting(false);
       setLoading(true);
@@ -126,85 +141,121 @@ export default function SubjectManagerPage() {
             </button>
           </div>
           {showForm && (
-            <form onSubmit={handleSubmit} className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border">
-              <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject Code</label>
-                <input
-                  type="text"
-                  name="subjectCode"
-                  value={form.subjectCode}
-                  onChange={handleInputChange}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
-                  required
-                />
-              </div>
-              <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
-                <input
-                  type="text"
-                  name="subjectName"
-                  value={form.subjectName}
-                  onChange={handleInputChange}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
-                  required
-                />
-              </div>
-              {formError && <div className="md:col-span-2 text-red-600 text-sm">{formError}</div>}
-              <div className="md:col-span-2 flex justify-end">
-                <button
-                  type="submit"
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium"
-                  disabled={submitting}
-                >
-                  {submitting ? "Adding..." : "Add Subject"}
-                </button>
-              </div>
-            </form>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+              <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-lg relative">
+                <button type="button" onClick={() => setShowForm(false)} className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl">×</button>
+                <div className="md:col-span-1 flex flex-col">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Subject Code</label>
+                  <input
+                    type="text"
+                    name="subjectCode"
+                    value={form.subjectCode}
+                    onChange={handleInputChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    required
+                  />
+                </div>
+                <div className="md:col-span-1 flex flex-col">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
+                  <input
+                    type="text"
+                    name="subjectName"
+                    value={form.subjectName}
+                    onChange={handleInputChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    required
+                  />
+                </div>
+                <div className="md:col-span-2 flex flex-col gap-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">PreRequisite (optional)</label>
+                  <Select
+                    isMulti
+                    name="prerequisite"
+                    options={subjects.map(s => ({ value: s._id, label: s.subjectCode }))}
+                    value={form.prerequisite.map(id => {
+                      const subj = subjects.find(s => s._id === id);
+                      return subj ? { value: subj._id, label: subj.subjectCode } : { value: id, label: id };
+                    })}
+                    onChange={opts => setForm(f => ({ ...f, prerequisite: opts.map((o: any) => o.value) }))}
+                    classNamePrefix="react-select"
+                    placeholder="Select prerequisite subjects"
+                  />
+                </div>
+                {formError && <div className="md:col-span-2 text-red-600 text-sm">{formError}</div>}
+                <div className="md:col-span-2 flex justify-end">
+                  <button
+                    type="submit"
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium"
+                    disabled={submitting}
+                  >
+                    {submitting ? "Adding..." : "Add Subject"}
+                  </button>
+                </div>
+              </form>
+            </div>
           )}
           {editingSubject && (
-            <form onSubmit={handleEditSubmit} className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4 bg-yellow-50 p-4 rounded-lg border border-yellow-300">
-              <div className="md:col-span-2 text-lg font-semibold text-yellow-800 mb-2">Edit Subject</div>
-              <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject Code</label>
-                <input
-                  type="text"
-                  name="subjectCode"
-                  value={editForm.subjectCode}
-                  onChange={handleEditInputChange}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
-                  required
-                />
-              </div>
-              <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
-                <input
-                  type="text"
-                  name="subjectName"
-                  value={editForm.subjectName}
-                  onChange={handleEditInputChange}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
-                  required
-                />
-              </div>
-              {editError && <div className="md:col-span-2 text-red-600 text-sm">{editError}</div>}
-              <div className="md:col-span-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-lg font-medium"
-                  onClick={() => setEditingSubject(null)}
-                  disabled={editSubmitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg font-medium"
-                  disabled={editSubmitting}
-                >
-                  {editSubmitting ? "Saving..." : "Save Changes"}
-                </button>
-              </div>
-            </form>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+              <form onSubmit={handleEditSubmit} className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-lg relative border border-yellow-300">
+                <button type="button" onClick={() => setEditingSubject(null)} className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl">×</button>
+                <div className="md:col-span-2 text-lg font-semibold text-yellow-800 mb-2">Edit Subject</div>
+                <div className="md:col-span-1 flex flex-col">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Subject Code</label>
+                  <input
+                    type="text"
+                    name="subjectCode"
+                    value={editForm.subjectCode}
+                    onChange={handleEditInputChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    required
+                  />
+                </div>
+                <div className="md:col-span-1 flex flex-col">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
+                  <input
+                    type="text"
+                    name="subjectName"
+                    value={editForm.subjectName}
+                    onChange={handleEditInputChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    required
+                  />
+                </div>
+                <div className="md:col-span-2 flex flex-col gap-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">PreRequisite (optional)</label>
+                  <Select
+                    isMulti
+                    name="prerequisite"
+                    options={subjects.map(s => ({ value: s._id, label: s.subjectCode }))}
+                    value={editForm.prerequisite.map(id => {
+                      const subj = subjects.find(s => s._id === id);
+                      return subj ? { value: subj._id, label: subj.subjectCode } : { value: id, label: id };
+                    })}
+                    onChange={opts => setEditForm(f => ({ ...f, prerequisite: opts.map((o: any) => o.value) }))}
+                    classNamePrefix="react-select"
+                    placeholder="Select prerequisite subjects"
+                  />
+                </div>
+                {editError && <div className="md:col-span-2 text-red-600 text-sm">{editError}</div>}
+                <div className="md:col-span-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-lg font-medium"
+                    onClick={() => setEditingSubject(null)}
+                    disabled={editSubmitting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg font-medium"
+                    disabled={editSubmitting}
+                  >
+                    {editSubmitting ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            </div>
           )}
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
@@ -212,6 +263,7 @@ export default function SubjectManagerPage() {
                 <tr className="bg-gray-100">
                   <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Subject Code</th>
                   <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Subject Name</th>
+                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">PreRequisite</th>
                   <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Created At</th>
                   <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Updated At</th>
                   <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
@@ -222,6 +274,24 @@ export default function SubjectManagerPage() {
                   <tr key={subject._id} className="hover:bg-gray-50">
                     <td className="border border-gray-300 px-4 py-3 text-gray-800">{subject.subjectCode}</td>
                     <td className="border border-gray-300 px-4 py-3 text-gray-800">{subject.subjectName}</td>
+                    <td className="border border-gray-300 px-4 py-3 text-gray-800">
+                      {(subject.prerequisite && subject.prerequisite.length > 0)
+                        ? subject.prerequisite.map(id => {
+                            const idStr =
+                              typeof id === 'string'
+                                ? id
+                                : (id && typeof id === 'object'
+                                    ? ('subjectCode' in id
+                                        ? id.subjectCode
+                                        : ('_id' in id ? (id as any).id : '')
+                                      )
+                                    : ''
+                                  );
+                            const subj = subjects.find(s => s._id === idStr);
+                            return subj ? subj.subjectCode : idStr;
+                          }).join(', ')
+                        : ''}
+                    </td>
                     <td className="border border-gray-300 px-4 py-3 text-gray-800">{subject.createdAt ? new Date(subject.createdAt).toLocaleString() : ""}</td>
                     <td className="border border-gray-300 px-4 py-3 text-gray-800">{subject.updatedAt ? new Date(subject.updatedAt).toLocaleString() : ""}</td>
                     <td className="border border-gray-300 px-4 py-3 text-gray-800">

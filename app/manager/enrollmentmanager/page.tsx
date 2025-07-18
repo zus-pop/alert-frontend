@@ -5,11 +5,12 @@ import { fetchSubjects, Subject } from "../../../services/subjectApi";
 import { fetchCourses, Course } from "../../../services/courseApi";
 import { fetchAttendances, Attendance, updateAttendance } from "../../../services/attendanceApi";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "../../../components/ui/accordion";
-import { Eye } from "lucide-react";
+import { Eye, Plus, Pencil, Trash } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog";
 import { useToast } from "../../../hooks/use-toast";
 import { EnrollmentInput, GradeInput } from "../../../services/enrollmentApi";
 import { fetchStudents, Student } from "../../../services/studentApi";
+import Select from 'react-select';
 
 interface EnrollmentFormProps {
   onSubmit: (data: EnrollmentInput) => void;
@@ -20,24 +21,43 @@ interface EnrollmentFormProps {
   initialData?: EnrollmentInput;
 }
 
+// Định nghĩa type riêng cho grade trong form
+type GradeForm = { type: string; score: string; weight: string };
+
 function EnrollmentForm({ onSubmit, onCancel, courses, students, subjectMap, initialData }: EnrollmentFormProps) {
-  const [form, setForm] = useState<EnrollmentInput>(
-    initialData || { courseId: "", studentId: "", grade: [] }
-  );
+  // State form dùng type riêng, không dùng EnrollmentInput trực tiếp
+  const [form, setForm] = useState<{
+    courseId: string;
+    studentId: string;
+    grade: GradeForm[];
+  }>(() => {
+    if (initialData) {
+      return {
+        courseId: initialData.courseId,
+        studentId: initialData.studentId,
+        grade: (initialData.grade || []).map(g => ({
+          type: g.type,
+          score: g.score?.toString() ?? '',
+          weight: g.weight?.toString() ?? ''
+        }))
+      };
+    }
+    return { courseId: '', studentId: '', grade: [] };
+  });
 
-  const addGrade = () => setForm((f: EnrollmentInput) => ({
+  const addGrade = () => setForm((f) => ({
     ...f,
-    grade: [...f.grade, { type: "", score: 0, weight: 0 }]
+    grade: [...f.grade, { type: '', score: '', weight: '' }]
   }));
 
-  const removeGrade = (idx: number) => setForm((f: EnrollmentInput) => ({
+  const removeGrade = (idx: number) => setForm((f) => ({
     ...f,
-    grade: f.grade.filter((_: GradeInput, i: number) => i !== idx)
+    grade: f.grade.filter((_, i) => i !== idx)
   }));
 
-  const updateGrade = (idx: number, key: keyof GradeInput, value: any) => setForm((f: EnrollmentInput) => ({
+  const updateGrade = (idx: number, key: keyof GradeForm, value: any) => setForm((f) => ({
     ...f,
-    grade: f.grade.map((g: GradeInput, i: number) => i === idx ? { ...g, [key]: value } : g)
+    grade: f.grade.map((g, i) => i === idx ? { ...g, [key]: value } : g)
   }));
 
   // Tạo danh sách subjectCode duy nhất từ courses
@@ -51,14 +71,33 @@ function EnrollmentForm({ onSubmit, onCancel, courses, students, subjectMap, ini
     })
     .filter((v, i, a) => a.findIndex(t => t.subjectCode === v.subjectCode) === i);
 
-  // Tạo danh sách student cho gợi ý
+  // Tạo danh sách student cho react-select: label = Firstname (Studentcode)
   const studentOptions = students.map(s => ({
     value: s._id,
-    label: `${s._id} - ${s.lastName} ${s.firstName}${s.email ? ` (${s.email})` : ""}`
+    label: `${s.firstName}${s.studentCode ? ` (${s.studentCode})` : ""}`
   }));
+
+  // Tạo danh sách course cho react-select: label = subjectCode - subjectName
+  const courseOptions = courses.map(c => {
+    const subjectId = typeof c.subjectId === "string" ? c.subjectId : c.subjectId?._id;
+    const subject = subjectMap[subjectId];
+    return {
+      value: c._id,
+      label: subject ? `${subject.subjectCode} - ${subject.subjectName}` : c._id
+    };
+  });
 
   // Lấy subjectCode hiện tại từ courseId
   const selectedSubjectCode = subjectCodeOptions.find(opt => opt.courseId === form.courseId)?.subjectCode || "";
+
+  const GRADE_TYPE_OPTIONS = [
+    "Practice Exam",
+    "Final Exam",
+    "Progress Test",
+    "Quiz",
+    "Assignment",
+    "Team Project"
+  ];
 
   return (
     <form
@@ -69,79 +108,86 @@ function EnrollmentForm({ onSubmit, onCancel, courses, students, subjectMap, ini
         // Nếu courseId không phải là _id, mà là subjectCode, thì map lại
         const found = subjectCodeOptions.find(opt => opt.subjectCode === courseId);
         if (found) courseId = found.courseId;
-        onSubmit({ ...form, courseId });
+        // Ép kiểu lại grade trước khi submit
+        const grade = form.grade.map(g => ({
+          type: g.type,
+          score: parseFloat(g.score) || 0,
+          weight: parseFloat(g.weight) || 0
+        }));
+        onSubmit({ ...form, courseId, grade });
       }}
       className="space-y-4"
     >
       <div>
-        <label>Subject Code</label>
-        <select
-          value={selectedSubjectCode}
-          onChange={e => {
-            const selected = subjectCodeOptions.find(opt => opt.subjectCode === e.target.value);
-            setForm(f => ({ ...f, courseId: selected?.courseId || "" }));
-          }}
-          required
-          className="border px-2 py-1 w-full"
-        >
-          <option value="">Chọn subject code</option>
-          {subjectCodeOptions.map(opt => (
-            <option key={opt.subjectCode} value={opt.subjectCode}>
-              {opt.subjectCode}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label>Student ID</label>
-        <input
-          type="text"
-          value={form.studentId}
-          onChange={e => setForm(f => ({ ...f, studentId: e.target.value }))}
-          required
-          className="border px-2 py-1 w-full"
-          list="studentId-list"
-          placeholder="Nhập hoặc chọn student ID"
+        <Select
+          options={courseOptions}
+          value={courseOptions.find(opt => opt.value === form.courseId) || null}
+          onChange={opt => setForm(f => ({ ...f, courseId: opt ? opt.value : "" }))}
+          placeholder="Course"
+          isClearable
         />
-        <datalist id="studentId-list">
-          {studentOptions.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </datalist>
       </div>
       <div>
-        <label>Grade</label>
+        <Select
+          options={studentOptions}
+          value={studentOptions.find(opt => opt.value === form.studentId) || null}
+          onChange={opt => setForm(f => ({ ...f, studentId: opt ? opt.value : "" }))}
+          placeholder="Student"
+          isClearable
+        />
+      </div>
+      <div>
         {form.grade.map((g, idx) => (
-          <div key={idx} className="flex gap-2 items-center mb-2">
-            <input
-              type="text"
-              placeholder="Type"
-              value={g.type}
-              onChange={e => updateGrade(idx, "type", e.target.value)}
-              className="border px-2 py-1"
-            />
+          <div key={idx} className="grid grid-cols-4 gap-2 items-center mb-2 bg-gray-50 rounded border border-gray-200 py-1 px-2">
+            <select
+              value={g.type || ''}
+              onChange={e => updateGrade(idx, 'type', e.target.value)}
+              className="border px-2 py-1 w-full"
+              required
+            >
+              <option value="" disabled>Type</option>
+              {GRADE_TYPE_OPTIONS.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
             <input
               type="number"
               placeholder="Score"
               value={g.score}
-              onChange={e => updateGrade(idx, "score", Number(e.target.value))}
-              className="border px-2 py-1 w-20"
+              onChange={e => updateGrade(idx, 'score', e.target.value)}
+              className="border px-2 py-1 w-full text-center appearance-none hide-number-spin"
+              step="any"
+              required
             />
             <input
               type="number"
               placeholder="Weight"
               value={g.weight}
-              onChange={e => updateGrade(idx, "weight", Number(e.target.value))}
-              className="border px-2 py-1 w-20"
+              onChange={e => updateGrade(idx, 'weight', e.target.value)}
+              className="border px-2 py-1 w-full text-center appearance-none hide-number-spin"
+              step="any"
+              required
             />
-            <button type="button" onClick={() => removeGrade(idx)} className="text-red-500">X</button>
+            <button type="button" onClick={() => removeGrade(idx)} className="text-red-500 font-bold text-lg">×</button>
           </div>
         ))}
-        <button type="button" onClick={addGrade} className="text-blue-600 mt-2">+ Thêm grade</button>
+        {/* Tổng weight hiện tại */}
+        <div className="text-sm text-gray-500 mb-1">Total weight: {form.grade.reduce((sum, g) => sum + (parseFloat(g.weight) || 0), 0).toFixed(2)} / 1</div>
+        <button
+          type="button"
+          onClick={addGrade}
+          className="flex items-center justify-center mt-2 w-8 h-8 rounded-full bg-blue-600 text-white shadow hover:bg-blue-700 transition disabled:opacity-50"
+          title="Add grade"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+        {form.grade.reduce((sum, g) => sum + (parseFloat(g.weight) || 0), 0) > 1 && (
+          <div className="text-red-600 text-sm mt-1">Total weight must not exceed 1.</div>
+        )}
       </div>
       <div className="flex gap-2">
-        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Lưu</button>
-        <button type="button" className="px-4 py-2 bg-gray-300 rounded" onClick={onCancel}>Hủy</button>
+        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+        <button type="button" className="px-4 py-2 bg-gray-300 rounded" onClick={onCancel}>Cancel</button>
       </div>
     </form>
   );
@@ -213,22 +259,30 @@ export default function EnrollmentManagerPage() {
   async function handleAddEnrollment(data: EnrollmentInput) {
     try {
       await createEnrollment(data);
-      toast({ title: "Thêm enrollment thành công!" });
+      toast({ title: "Add new enrollment successfully!" });
       setShowAddModal(false);
       // Refetch lại enrollments
       fetchEnrollments(page, 100).then(res => setEnrollments(res.data));
     } catch (err) {
-      toast({ title: "Thêm enrollment thất bại!", variant: "destructive" });
+      toast({ title: "Add new enrollment fail!", variant: "destructive" });
     }
   }
   // Hàm sửa enrollment
   async function handleEditEnrollment(id: string, data: EnrollmentInput) {
     try {
       await updateEnrollment(id, data);
-      toast({ title: "Cập nhật enrollment thành công!" });
+      toast({ title: "Update Enrollment Successfully!" });
       setShowEditModal(false);
       setEditingEnrollment(null);
-      fetchEnrollments(page, 100).then(res => setEnrollments(res.data));
+      // Fetch lại enrollments và cập nhật selectedStudent nếu đang mở modal chi tiết
+      fetchEnrollments(page, 100).then(res => {
+        setEnrollments(res.data);
+        if (selectedStudent) {
+          // Tìm lại student vừa xem chi tiết và cập nhật enrolls mới nhất
+          const updatedEnrolls = res.data.filter((e: Enrollment) => e.studentId._id === selectedStudent.id);
+          setSelectedStudent({ ...selectedStudent, enrolls: updatedEnrolls });
+        }
+      });
     } catch (err) {
       toast({ title: "Cập nhật enrollment thất bại!", variant: "destructive" });
     }
@@ -261,7 +315,7 @@ export default function EnrollmentManagerPage() {
         {/* Nút thêm enrollment ở đầu */}
         <div className="flex justify-end mb-4">
           <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={() => setShowAddModal(true)}>
-            Thêm Enrollment
+            Add Enrollment
           </button>
         </div>
         <div className="bg-white rounded-lg shadow-lg p-6">
@@ -271,9 +325,8 @@ export default function EnrollmentManagerPage() {
               <thead>
                 <tr className="bg-gray-100">
                   <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Full Name</th>
-                  <th className="border border-gray-200 px-4 py-3 text-center font-semibold text-gray-700">Student Code</th>
                   <th className="border border-gray-200 px-4 py-3 text-center font-semibold text-gray-700">Enrollments This Semester</th>
-                  <th className="border border-gray-200 px-4 py-3 text-center font-semibold text-gray-700">Actions</th>
+                  <th className="border border-gray-200 px-4 py-3 text-center font-semibold text-gray-700">Details</th>
                 </tr>
               </thead>
               <tbody>
@@ -292,7 +345,6 @@ export default function EnrollmentManagerPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="border border-gray-100 px-4 py-3 text-center text-gray-800">{/* studentCode nếu có */}</td>
                       <td className="border border-gray-100 px-4 py-3 text-center text-gray-800">{enrolls.length}</td>
                       <td className="border border-gray-100 px-4 py-3 text-center">
                         <button
@@ -307,14 +359,14 @@ export default function EnrollmentManagerPage() {
                   );
                 })}
                 {Object.keys(enrollmentByStudent).length === 0 && (
-                  <tr><td colSpan={4} className="text-center py-8 text-gray-500">No enrollments found.</td></tr>
+                  <tr><td colSpan={3} className="text-center py-8 text-gray-500">No enrollments found.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
           {/* Modal xem chi tiết đăng ký */}
           <Dialog open={!!selectedStudent} onOpenChange={open => { if (!open) setSelectedStudent(null); }}>
-            <DialogContent className="max-w-6xl w-full bg-white rounded-lg shadow-xl">
+            <DialogContent className="max-w-6xl w-full bg-white rounded-lg shadow-xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Enrollment details for {selectedStudent?.name}</DialogTitle>
               </DialogHeader>
@@ -322,12 +374,12 @@ export default function EnrollmentManagerPage() {
                 <table className="w-full border-collapse mt-2 min-w-[900px]">
                   <thead>
                     <tr className="bg-gray-100">
-                      <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Subject Code</th>
-                      <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Enrollment Date</th>
-                      <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Status</th>
-                      <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Grade</th>
-                      <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Attendance</th>
-                      <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
+                      <th className="border border-gray-200 px-4 py-3 text-center font-semibold text-gray-700 w-40">Course</th>
+                      <th className="border border-gray-200 px-4 py-3 text-center font-semibold text-gray-700">Enrollment Date</th>
+                      <th className="border border-gray-200 px-4 py-3 text-center font-semibold text-gray-700">Status</th>
+                      <th className="border border-gray-200 px-4 py-3 text-center font-semibold text-gray-700">Grade</th>
+                      <th className="border border-gray-200 px-4 py-3 text-center font-semibold text-gray-700">Attendance</th>
+                      <th className="border border-gray-200 px-4 py-3 text-center font-semibold text-gray-700">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -338,19 +390,25 @@ export default function EnrollmentManagerPage() {
                       const attendedCount = attendanceOfEnrollment.filter(att => att.status !== "NOT YET").length;
                       const totalCount = attendanceOfEnrollment.length;
                       return (
-                        <tr key={enrollment._id} className="hover:bg-gray-50">
-                          <td className="border border-gray-100 px-4 py-3 text-gray-800">
+                        <tr key={enrollment._id} className="hover:bg-gray-50 text-center">
+                          <td className="border border-gray-100 px-2 py-3 text-gray-800 w-40 text-center">
                             {
                               (() => {
                                 const course = courseMap[enrollment.courseId];
                                 if (!course) return enrollment.courseId;
                                 const subjectId = typeof course.subjectId === "string" ? course.subjectId : course.subjectId?._id;
-                                return subjectMap[subjectId]?.subjectCode || subjectId || enrollment.courseId;
+                                const subject = subjectMap[subjectId];
+                                return subject ? (
+                                  <span>
+                                    <span className="font-bold text-blue-700">{subject.subjectCode}</span>
+                                    {` - ${subject.subjectName}`}
+                                  </span>
+                                ) : enrollment.courseId;
                               })()
                             }
                           </td>
-                          <td className="border border-gray-100 px-4 py-3 text-gray-800">{enrollment.enrollmentDate ? new Date(enrollment.enrollmentDate).toLocaleDateString() : ""}</td>
-                          <td className="border border-gray-100 px-4 py-3 text-gray-800">
+                          <td className="border border-gray-100 px-4 py-3 text-gray-800 text-center">{enrollment.enrollmentDate ? new Date(enrollment.enrollmentDate).toLocaleDateString() : ""}</td>
+                          <td className="border border-gray-100 px-4 py-3 text-gray-800 text-center">
                             {enrollment.status === "IN PROGRESS" && (
                               <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 font-semibold text-xs">
                                 IN PROGRESS
@@ -367,16 +425,33 @@ export default function EnrollmentManagerPage() {
                               </span>
                             )}
                           </td>
-                          <td className="border border-gray-100 px-4 py-3 text-gray-800">
-                            <ul>
+                          <td className="border border-gray-100 px-4 py-3 text-gray-800 text-center">
+                            <div className="flex flex-col gap-1">
                               {enrollment.grade.map((g, idx) => (
-                                <li key={idx}>
-                                  <span className="font-medium">{g.type}:</span> {g.score !== null ? g.score : "-"} (weight {g.weight})
-                                </li>
+                                <div key={idx} className="flex items-center justify-between text-sm">
+                                  <span className="font-semibold text-gray-800">{g.type}</span>
+                                  <span className="flex items-center gap-2">
+                                    <span
+                                      className={
+                                        `text-right min-w-[32px] font-bold rounded px-2 py-1 ` +
+                                        (typeof g.score === 'number' && !isNaN(g.score)
+                                          ? g.score < 4
+                                            ? 'bg-red-100 text-red-700 border border-red-300'
+                                            : g.score > 8
+                                              ? 'bg-green-100 text-green-700 border border-green-300'
+                                              : 'border border-gray-300 text-gray-800'
+                                          : 'border border-gray-300 text-gray-800')
+                                      }
+                                    >
+                                      {(typeof g.score === 'number' && !isNaN(g.score)) ? g.score : "-"}
+                                    </span>
+                                    <span className="text-xs text-gray-500">/ weight <span className="font-semibold">{g.weight}</span></span>
+                                  </span>
+                                </div>
                               ))}
-                            </ul>
+                            </div>
                           </td>
-                          <td className="border border-gray-100 px-4 py-3 text-gray-800">
+                          <td className="border border-gray-100 px-4 py-3 text-gray-800 text-center">
                             <details>
                               <summary>
                                 {attendedCount}/{totalCount}
@@ -480,22 +555,24 @@ export default function EnrollmentManagerPage() {
                               </div>
                             </details>
                           </td>
-                          <td className="border border-gray-100 px-4 py-3 text-gray-800">
+                          <td className="border border-gray-100 px-4 py-3 text-gray-800 text-center">
                             <div className="flex gap-2">
                               <button
-                                className="text-blue-600 hover:underline mr-2"
+                                className="text-blue-600 hover:bg-blue-100 rounded-full p-1 mr-1"
+                                title="Edit"
                                 onClick={() => {
                                   setEditingEnrollment(enrollment);
                                   setShowEditModal(true);
                                 }}
                               >
-                                Sửa
+                                <Pencil className="w-4 h-4" />
                               </button>
                               <button
-                                className="text-red-600 hover:underline"
+                                className="text-red-600 hover:bg-red-100 rounded-full p-1"
+                                title="Delete"
                                 onClick={() => handleDeleteEnrollment(enrollment._id)}
                               >
-                                Xóa
+                                <Trash className="w-4 h-4" />
                               </button>
                             </div>
                           </td>
@@ -528,9 +605,9 @@ export default function EnrollmentManagerPage() {
           {/* Modal thêm enrollment */}
           {showAddModal && (
             <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-              <DialogContent>
+              <DialogContent className="max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Thêm Enrollment</DialogTitle>
+                  <DialogTitle>New Enrollment</DialogTitle>
                 </DialogHeader>
                 <EnrollmentForm
                   onSubmit={handleAddEnrollment}
@@ -545,7 +622,7 @@ export default function EnrollmentManagerPage() {
           {/* Modal sửa enrollment */}
           {showEditModal && editingEnrollment && (
             <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-              <DialogContent>
+              <DialogContent className="max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Sửa Enrollment</DialogTitle>
                 </DialogHeader>
@@ -566,6 +643,17 @@ export default function EnrollmentManagerPage() {
           )}
         </div>
       </div>
+      {/* Ẩn nút tăng giảm ở input number */}
+      <style jsx global>{`
+        input[type=number].hide-number-spin::-webkit-inner-spin-button, 
+        input[type=number].hide-number-spin::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type=number].hide-number-spin {
+          -moz-appearance: textfield;
+        }
+      `}</style>
     </div>
   );
 } 

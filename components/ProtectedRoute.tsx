@@ -58,8 +58,9 @@ export default function ProtectedRoute({ children, allowedRoles = [] }: Protecte
       if (!isAuthenticated || validToken === null) {
         if (window.location.pathname !== '/') {
           router.push('/');
+          return; // Dừng useEffect tại đây để tránh vòng lặp
         }
-        return;
+        return; // Dừng useEffect tại đây
       }
       
       if (user) {
@@ -111,7 +112,7 @@ export default function ProtectedRoute({ children, allowedRoles = [] }: Protecte
   }
 
   if (!isAuthenticated || validToken === null) {
-    console.log("ProtectedRoute: Not authenticated, returning null");
+    // Không render gì cả khi chưa xác thực
     return null;
   }
 

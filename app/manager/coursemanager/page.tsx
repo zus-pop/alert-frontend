@@ -22,6 +22,7 @@ export default function CourseManagerPage() {
   const [editForm, setEditForm] = useState({ subjectId: "", semesterId: "", image: null as File | null });
   const [editError, setEditError] = useState<string | null>(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const [filterSemester, setFilterSemester] = useState<string>("");
 
   useEffect(() => {
     setLoading(true);
@@ -185,14 +186,26 @@ export default function CourseManagerPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
             <h1 className="text-3xl font-bold text-gray-800">Course Management</h1>
-            <button
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-              onClick={() => setShowForm((v) => !v)}
-            >
-              {showForm ? "Close" : "Add Course"}
-            </button>
+            <div className="flex gap-4 items-center">
+              <select
+                className="px-3 py-2 border border-gray-300 rounded-lg min-w-[180px]"
+                value={filterSemester}
+                onChange={e => setFilterSemester(e.target.value)}
+              >
+                <option value="">All semesters</option>
+                {semesters.map(s => (
+                  <option key={s._id} value={s._id}>{s.semesterName}</option>
+                ))}
+              </select>
+              <button
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+                onClick={() => setShowForm((v) => !v)}
+              >
+                {showForm ? "Close" : "Add Course"}
+              </button>
+            </div>
           </div>
           {showForm && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -377,7 +390,10 @@ export default function CourseManagerPage() {
           )}
           {/* Thay thế bảng bằng grid card */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.slice((page-1)*pageSize, page*pageSize).map((course) => (
+            {courses
+              .filter(c => !filterSemester || c.semesterId?._id === filterSemester)
+              .slice((page-1)*pageSize, page*pageSize)
+              .map((course) => (
               <div
                 key={course._id}
                 className="bg-white rounded-2xl shadow p-4 flex flex-col transition-transform duration-200 hover:scale-105 hover:shadow-xl hover:bg-blue-50 cursor-pointer"
@@ -412,30 +428,33 @@ export default function CourseManagerPage() {
                 </div>
               </div>
             ))}
-            {courses.length === 0 && (
+            {courses.filter(c => !filterSemester || c.semesterId?._id === filterSemester).length === 0 && (
               <div className="col-span-full text-center py-8 text-gray-500">No courses found.</div>
             )}
           </div>
           {/* Pagination */}
-          {courses.length > pageSize && (
-            <div className="flex justify-center items-center gap-2 mt-6">
-              <button
-                className="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium disabled:opacity-50"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                Previous
-              </button>
-              <span className="mx-2 text-gray-800">Page {page} / {Math.ceil(courses.length / pageSize)}</span>
-              <button
-                className="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium disabled:opacity-50"
-                onClick={() => setPage((p) => Math.min(Math.ceil(courses.length / pageSize), p + 1))}
-                disabled={page === Math.ceil(courses.length / pageSize)}
-              >
-                Next
-              </button>
-            </div>
-          )}
+          {(() => {
+            const filtered = courses.filter(c => !filterSemester || c.semesterId?._id === filterSemester);
+            return filtered.length > pageSize && (
+              <div className="flex justify-center items-center gap-2 mt-6">
+                <button
+                  className="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium disabled:opacity-50"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Previous
+                </button>
+                <span className="mx-2 text-gray-800">Page {page} / {Math.ceil(filtered.length / pageSize)}</span>
+                <button
+                  className="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium disabled:opacity-50"
+                  onClick={() => setPage((p) => Math.min(Math.ceil(filtered.length / pageSize), p + 1))}
+                  disabled={page === Math.ceil(filtered.length / pageSize)}
+                >
+                  Next
+                </button>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

@@ -7,6 +7,7 @@ export interface Subject {
   createdAt?: string;
   updatedAt?: string;
   __v?: number;
+  prerequisite?: { subjectCode: string; subjectName: string }[];
 }
 
 export interface SubjectsResponse {
@@ -33,12 +34,12 @@ export const getSubjectById = async (id: string): Promise<Subject> => {
   return response.data;
 };
 
-export const createSubject = async (data: { subjectCode: string; subjectName: string }) => {
+export const createSubject = async (data: { subjectCode: string; subjectName: string; prerequisite?: string[] }) => {
   const response = await api.post('/subjects', data);
   return response.data;
 };
 
-export const updateSubject = async (id: string, data: { subjectCode: string; subjectName: string }) => {
+export const updateSubject = async (id: string, data: { subjectCode: string; subjectName: string; prerequisite?: string[] }) => {
   const response = await api.patch(`/subjects/${id}`, data);
   return response.data;
 };
