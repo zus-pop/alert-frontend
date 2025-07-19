@@ -466,7 +466,7 @@ export default function AlertsPage() {
                           <CardTitle className="text-lg">
                             {alert.enrollmentId?.studentId?.firstName || '-'} {alert.enrollmentId?.studentId?.lastName || '-'}
                           </CardTitle>
-                          <Badge variant="outline">{alert.enrollmentId?.studentId?.email || '-'}</Badge>
+                          {/* <Badge variant="outline">{alert.enrollmentId?.studentId?.email || '-'}</Badge> */}
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge className={statusColors[alert.status]}>
@@ -483,7 +483,7 @@ export default function AlertsPage() {
                           )}
                           <div className="flex items-center gap-1 text-sm text-gray-500">
                             <Calendar className="w-3 h-3" />
-                            {new Date(alert.date).toLocaleString("vi-VN")}
+                            {new Date(alert.createdAt).toLocaleString("vi-VN")}
                           </div>
                         </div>
                       </div>
@@ -622,7 +622,7 @@ export default function AlertsPage() {
                   </Badge>
                   <div className="flex items-center gap-1 text-xs text-gray-500">
                     <Calendar className="w-3 h-3" />
-                    {new Date(selectedAlert.date).toLocaleDateString("vi-VN")}
+                    {new Date(selectedAlert.createdAt).toLocaleDateString("vi-VN")}
                   </div>
                 </div>
                 <div>
