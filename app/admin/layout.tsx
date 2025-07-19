@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Navbar } from "@/components/navbar"
-import { Users, UserCog, Shield, Settings, BookOpen, SwatchBook } from "lucide-react"
+import { Users, UserCog, Shield, Settings, BookOpen, SwatchBook, Package } from "lucide-react"
 import { useSystemUsers } from '@/hooks/useSystemUsers'
 import { useSubjects } from '@/hooks/useSubjects'
 import { useSemesters } from '@/hooks/useSemesters'
@@ -17,7 +17,8 @@ export default function AdminLayout({
   const [counts, setCounts] = useState({
     users: 0,
     subjects: 0,
-    semesters: 0
+    semesters: 0,
+    combos: 0
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -45,7 +46,8 @@ export default function AdminLayout({
     const newCounts = {
       users: userData?.totalItems || 0,
       subjects: subjectsData?.totalItems || 0,
-      semesters: semestersData?.totalItems || 0
+      semesters: semestersData?.totalItems || 0,
+      combos: 0 // We'll update this when the combos API is added
     };
     setCounts(newCounts);
     
@@ -97,6 +99,26 @@ export default function AdminLayout({
       badge: isLoading ? undefined : counts.semesters,
       badgeVariant: semestersError ? "destructive" as const : "secondary" as const,
     },
+    {
+      href: "/admin/combos",
+      label: "Combos",
+      icon: <Package className="w-4 h-4" />,
+      badge: isLoading ? undefined : counts.combos,
+      badgeVariant: "secondary" as const,
+    },
+    {
+      href: "/admin/curriculums",
+      label: "Curriculums",
+      icon: <Package className="w-4 h-4" />,
+      badge: isLoading ? undefined : counts.combos,
+      badgeVariant: "secondary" as const,
+    }, {
+      href: "/admin/majors",
+      label: "Majors",
+      icon: <Package className="w-4 h-4" />,
+      badge: isLoading ? undefined : counts.combos,
+      badgeVariant: "secondary" as const,
+    }
   ]
 
   return (

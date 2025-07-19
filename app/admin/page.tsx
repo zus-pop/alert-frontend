@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Users, UserCog, Shield, TrendingUp, Activity, AlertCircle, BookOpen } from "lucide-react"
+import { Users, UserCog, Shield, TrendingUp, Activity, AlertCircle, BookOpen, Package } from "lucide-react"
 import Link from "next/link"
 
 export default function AdminDashboard() {
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid md:grid-cols-4 gap-6">
+      <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6">
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <Link href="/admin/students">
             <CardHeader className="text-center pb-4">
@@ -161,6 +161,29 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent className="text-center">
               <div className="text-gray-600 mb-2">View and manage all subjects in the system</div>
+              <Button className="w-full mt-4" variant="outline">
+                View Details
+              </Button>
+            </CardContent>
+          </Link>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Link href="/admin/combos">
+            <CardHeader className="text-center pb-4">
+              <div className="mx-auto w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-indigo-600">
+                  <path d="M16.5 9.4 7.5 4.21"></path>
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  <path d="M3.27 6.96 12 12.01l8.73-5.05"></path>
+                  <path d="M12 22.08V12"></path>
+                </svg>
+              </div>
+              <CardTitle className="text-xl">Manage Combos</CardTitle>
+              <CardDescription>Manage combo packages</CardDescription>
+            </CardHeader>
+            <CardContent className="text-center">
+              <div className="text-gray-600 mb-2">View and manage all combos in the system</div>
               <Button className="w-full mt-4" variant="outline">
                 View Details
               </Button>
