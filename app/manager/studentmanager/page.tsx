@@ -1,11 +1,12 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { StudentRow } from "../StudentRow/page"
+import { StudentRow } from "../studentmanager/StudentRow"
 import { fetchStudents, Student as ApiStudent, createStudent, CreateStudentPayload, updateStudent, restoreStudent, deleteStudent } from "../../../services/studentApi"
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from "../../../components/ui/dialog"
+import { getMajors, getCombos, getCurriculums, Major, Combo, Curriculum } from '../../../services/majorApi';
 
-interface Student {
+export interface Student {
   id: string;
   fullName: string;
   studentId: string;
@@ -52,17 +53,27 @@ export default function StudentManagerPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [editingStudent, setEditingStudent] = useState<ApiStudent | null>(null)
-  const [editForm, setEditForm] = useState<CreateStudentPayload>({
+  // Thay đổi khai báo editForm để cho phép các trường mở rộng như learnedSemester
+  const [editForm, setEditForm] = useState<Partial<ApiStudent>>({
     studentCode: "",
     firstName: "",
     lastName: "",
     gender: "Male",
-    email: ""
-  })
+    email: "",
+    learnedSemester: 1
+  });
   const [editError, setEditError] = useState<string | null>(null)
   const [editSubmitting, setEditSubmitting] = useState(false)
   const [showDeleted, setShowDeleted] = useState(false)
   const [deletedStudents, setDeletedStudents] = useState<ApiStudent[]>([])
+
+  // State cho Major, Combo, Curriculum
+  const [majors, setMajors] = useState<Major[]>([]);
+  const [combos, setCombos] = useState<Combo[]>([]);
+  const [curriculums, setCurriculums] = useState<Curriculum[]>([]);
+  const [selectedMajor, setSelectedMajor] = useState<string>('');
+  const [selectedCombo, setSelectedCombo] = useState<string>('');
+  const [selectedCurriculum, setSelectedCurriculum] = useState<string>('');
 
   useEffect(() => {
     setLoading(true)
@@ -79,6 +90,39 @@ export default function StudentManagerPage() {
         setLoading(false)
       })
   }, [page])
+
+  // Load majors khi mở form
+  useEffect(() => {
+    if (showForm) {
+      getMajors().then(setMajors);
+    }
+  }, [showForm]);
+
+  // Khi chọn major, load combos
+  useEffect(() => {
+    if (selectedMajor) {
+      getCombos({ majorId: selectedMajor }).then(setCombos);
+      setSelectedCombo('');
+      setCurriculums([]);
+      setSelectedCurriculum('');
+    } else {
+      setCombos([]);
+      setSelectedCombo('');
+      setCurriculums([]);
+      setSelectedCurriculum('');
+    }
+  }, [selectedMajor]);
+
+  // Khi chọn combo, load curriculums
+  useEffect(() => {
+    if (selectedCombo) {
+      getCurriculums({ comboId: selectedCombo }).then(setCurriculums);
+      setSelectedCurriculum('');
+    } else {
+      setCurriculums([]);
+      setSelectedCurriculum('');
+    }
+  }, [selectedCombo]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -116,28 +160,31 @@ export default function StudentManagerPage() {
   }
 
   const handleEdit = (student: any) => {
-    // Tìm lại object gốc từ students để lấy đúng _id theo id
-    const original = students.find(s => s._id === student.id)
-    if (!original) return
-    setEditingStudent(original)
+    setEditingStudent(student);
     setEditForm({
-      studentCode: original.studentCode || "",
-      firstName: original.firstName,
-      lastName: original.lastName,
-      gender: original.gender,
-      email: original.email
-    })
-    setEditError(null)
-  }
+      studentCode: student.studentCode || "",
+      firstName: student.firstName,
+      lastName: student.lastName,
+      gender: student.gender,
+      email: student.email,
+      learnedSemester: student.learnedSemester || 1
+    });
+    setEditError(null);
+  };
 
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value })
-  }
+    const { name, value } = e.target;
+    if (name === "learnedSemester") {
+      setEditForm({ ...editForm, learnedSemester: Number(value) });
+    } else {
+      setEditForm({ ...editForm, [name]: value });
+    }
+  };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setEditError(null)
-    if (!/^[a-zA-Z0-9]{8}$/.test(editForm.studentCode)) {
+    if (!/^[a-zA-Z0-9]{8}$/.test(editForm.studentCode || "")) {
       setEditError("Student code must be exactly 8 alphanumeric characters!")
       return
     }
@@ -231,6 +278,7 @@ export default function StudentManagerPage() {
           </div>
           {showForm && (
             <form onSubmit={handleSubmit} className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border">
+              {/* Các trường thông tin cá nhân */}
               <div className="md:col-span-1 flex flex-col">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Student Code</label>
                 <input
@@ -367,6 +415,18 @@ export default function StudentManagerPage() {
                     required
                   />
                 </div>
+                <div className="md:col-span-1 flex flex-col">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Current Semester</label>
+                  <input
+                    type="number"
+                    name="learnedSemester"
+                    value={editForm.learnedSemester || ''}
+                    onChange={handleEditInputChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    min={1}
+                    required
+                  />
+                </div>
                 {editError && <div className="md:col-span-2 text-red-600 text-sm">{editError}</div>}
                 <DialogFooter className="md:col-span-2 flex justify-end gap-2 mt-2">
                   <button
@@ -407,8 +467,8 @@ export default function StudentManagerPage() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-100">
-                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Name</th>
                     <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Student Code</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Name</th>
                     <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Gender</th>
                     <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Email</th>
                     <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Restore</th>
@@ -420,8 +480,8 @@ export default function StudentManagerPage() {
                   )}
                   {deletedStudents.map((student) => (
                     <tr key={student._id} className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.firstName} {student.lastName}</td>
                       <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.studentCode || ''}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.firstName} {student.lastName}</td>
                       <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.gender}</td>
                       <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.email}</td>
                       <td className="border border-gray-300 px-4 py-3 text-gray-800">
@@ -442,32 +502,43 @@ export default function StudentManagerPage() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-100">
-                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Name</th>
                     <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Student Code</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Name</th>
                     <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Gender</th>
                     <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Email</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Current Semester</th>
                     <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {students.map((student) => (
-                    <StudentRow
-                      key={student._id}
-                      student={{
-                        id: student._id,
-                        fullName: `${student.firstName} ${student.lastName}`,
-                        studentId: student.studentCode || "",
-                        gender: student.gender as any,
-                        email: student.email,
-                        password: student.password || "",
-                        subjects: [],
-                        scores: {},
-                        attendance: {},
-                      }}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      onUpdateScoreOrAttendance={handleUpdateScoreOrAttendance}
-                    />
+                    <tr key={student._id} className="hover:bg-gray-50">
+                      <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.studentCode || ''}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.firstName} {student.lastName}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.gender}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-gray-800">{student.email}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-center text-gray-800">{student.learnedSemester || ''}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-center">
+                        <button
+                          className="text-yellow-600 hover:text-yellow-800 mr-2"
+                          title="Edit"
+                          onClick={() => handleEdit(student)}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 inline">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.1 2.1 0 1 1 2.97 2.97L7.5 19.788l-4 1 1-4 14.362-14.3z" />
+                          </svg>
+                        </button>
+                        <button
+                          className="text-red-600 hover:text-red-800"
+                          title="Delete"
+                          onClick={() => handleDelete(student._id)}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 inline">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
                   ))}
                 </tbody>
               </table>

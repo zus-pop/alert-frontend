@@ -14,6 +14,7 @@ export interface Student {
   updatedAt?: string;
   isDeleted?: boolean;
   deletedAt?: string | null;
+  learnedSemester?: number;
 }
 
 export interface StudentListResponse {
@@ -37,12 +38,19 @@ export interface CreateStudentPayload {
   email: string;
 }
 
+export interface UpdateStudentPayload extends Partial<CreateStudentPayload> {
+  majorId?: string;
+  comboId?: string;
+  curriculumId?: string;
+  learnedSemester?: number;
+}
+
 export async function createStudent(data: CreateStudentPayload) {
   const res = await api.post('/students', data);
   return res.data;
 }
 
-export async function updateStudent(id: string, data: Partial<CreateStudentPayload>) {
+export async function updateStudent(id: string, data: UpdateStudentPayload) {
   const res = await api.patch(`/students/${id}`, data);
   return res.data;
 }

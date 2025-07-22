@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import type { Student } from "./StudentManager"
+import type { Student } from "../../../services/studentApi"
 
 interface StudentDetailProps {
   student: Student

@@ -11,11 +11,11 @@ export default function SubjectManagerPage() {
   const [page, setPage] = useState(1);
   const [totalPage, setTotalPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ subjectCode: "", subjectName: "", prerequisite: [] as string[] });
+  const [form, setForm] = useState({ subjectCode: "", subjectName: "", prerequisite: [] as string[], credit: 0 });
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
-  const [editForm, setEditForm] = useState({ subjectCode: "", subjectName: "", prerequisite: [] as string[] });
+  const [editForm, setEditForm] = useState({ subjectCode: "", subjectName: "", prerequisite: [] as string[], credit: 0 });
   const [editError, setEditError] = useState<string | null>(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
 
@@ -44,7 +44,7 @@ export default function SubjectManagerPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
-    if (!form.subjectCode.trim() || !form.subjectName.trim()) {
+    if (!form.subjectCode.trim() || !form.subjectName.trim() || form.credit < 0) {
       setFormError("Please enter all required information!");
       return;
     }
@@ -53,10 +53,11 @@ export default function SubjectManagerPage() {
       await createSubject({
         subjectCode: form.subjectCode,
         subjectName: form.subjectName,
-        prerequisite: form.prerequisite
+        prerequisite: form.prerequisite,
+        credit: Number(form.credit)
       });
       setShowForm(false);
-      setForm({ subjectCode: "", subjectName: "", prerequisite: [] });
+      setForm({ subjectCode: "", subjectName: "", prerequisite: [], credit: 0 });
       setLoading(true);
       fetchSubjects(page, 10).then((res) => {
         setSubjects(res.data);
@@ -74,7 +75,8 @@ export default function SubjectManagerPage() {
     setEditForm({
       subjectCode: subject.subjectCode,
       subjectName: subject.subjectName,
-      prerequisite: (subject.prerequisite || []).map((p: any) => typeof p === 'string' ? p : p._id || p.subjectCode)
+      prerequisite: (subject.prerequisite || []).map((p: any) => typeof p === 'string' ? p : p._id || p.subjectCode),
+      credit: subject.credit || 0
     });
     setEditError(null);
   };
@@ -84,7 +86,7 @@ export default function SubjectManagerPage() {
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setEditError(null);
-    if (!editForm.subjectCode.trim() || !editForm.subjectName.trim()) {
+    if (!editForm.subjectCode.trim() || !editForm.subjectName.trim() || editForm.credit < 0) {
       setEditError("Please enter all required information!");
       return;
     }
@@ -93,7 +95,8 @@ export default function SubjectManagerPage() {
       await updateSubject(editingSubject?._id!, {
         subjectCode: editForm.subjectCode,
         subjectName: editForm.subjectName,
-        prerequisite: editForm.prerequisite
+        prerequisite: editForm.prerequisite,
+        credit: Number(editForm.credit)
       });
       setEditingSubject(null);
       setEditSubmitting(false);
@@ -141,55 +144,70 @@ export default function SubjectManagerPage() {
             </button>
           </div>
           {showForm && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-              <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-lg relative">
-                <button type="button" onClick={() => setShowForm(false)} className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl">×</button>
-                <div className="md:col-span-1 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Subject Code</label>
-                  <input
-                    type="text"
-                    name="subjectCode"
-                    value={form.subjectCode}
-                    onChange={handleInputChange}
-                    className="px-3 py-2 border border-gray-300 rounded-lg"
-                    required
-                  />
-                </div>
-                <div className="md:col-span-1 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
-                  <input
-                    type="text"
-                    name="subjectName"
-                    value={form.subjectName}
-                    onChange={handleInputChange}
-                    className="px-3 py-2 border border-gray-300 rounded-lg"
-                    required
-                  />
-                </div>
-                <div className="md:col-span-2 flex flex-col gap-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">PreRequisite (optional)</label>
-                  <Select
-                    isMulti
-                    name="prerequisite"
-                    options={subjects.map(s => ({ value: s._id, label: s.subjectCode }))}
-                    value={form.prerequisite.map(id => {
-                      const subj = subjects.find(s => s._id === id);
-                      return subj ? { value: subj._id, label: subj.subjectCode } : { value: id, label: id };
-                    })}
-                    onChange={opts => setForm(f => ({ ...f, prerequisite: opts.map((o: any) => o.value) }))}
-                    classNamePrefix="react-select"
-                    placeholder="Select prerequisite subjects"
-                  />
-                </div>
-                {formError && <div className="md:col-span-2 text-red-600 text-sm">{formError}</div>}
-                <div className="md:col-span-2 flex justify-end">
-                  <button
-                    type="submit"
-                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium"
-                    disabled={submitting}
-                  >
-                    {submitting ? "Adding..." : "Add Subject"}
-                  </button>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+              <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-xl relative border-2 border-blue-200 animate-fade-in">
+                <button type="button" onClick={() => setShowForm(false)} className="absolute top-4 right-4 text-gray-400 hover:text-blue-600 text-3xl font-bold">×</button>
+                <h2 className="text-2xl font-bold text-center mb-8 text-blue-700 tracking-wide">Add New Subject</h2>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col">
+                    <label className="block text-base font-semibold text-gray-700 mb-2">Subject Code</label>
+                    <input
+                      type="text"
+                      name="subjectCode"
+                      value={form.subjectCode}
+                      onChange={handleInputChange}
+                      className="px-4 py-3 border border-gray-300 rounded-xl text-lg focus:ring-2 focus:ring-blue-400"
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="block text-base font-semibold text-gray-700 mb-2">Subject Name</label>
+                    <input
+                      type="text"
+                      name="subjectName"
+                      value={form.subjectName}
+                      onChange={handleInputChange}
+                      className="px-4 py-3 border border-gray-300 rounded-xl text-lg focus:ring-2 focus:ring-blue-400"
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="block text-base font-semibold text-gray-700 mb-2">Credit</label>
+                    <input
+                      type="number"
+                      name="credit"
+                      min={0}
+                      value={form.credit}
+                      onChange={e => setForm(f => ({ ...f, credit: Number(e.target.value) }))}
+                      className="px-4 py-3 border border-gray-300 rounded-xl text-lg focus:ring-2 focus:ring-blue-400"
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="block text-base font-semibold text-gray-700 mb-2">PreRequisite (optional)</label>
+                    <Select
+                      isMulti
+                      name="prerequisite"
+                      options={subjects.map(s => ({ value: s._id, label: s.subjectCode }))}
+                      value={form.prerequisite.map(id => {
+                        const subj = subjects.find(s => s._id === id);
+                        return subj ? { value: subj._id, label: subj.subjectCode } : { value: id, label: id };
+                      })}
+                      onChange={opts => setForm(f => ({ ...f, prerequisite: opts.map((o: any) => o.value) }))}
+                      classNamePrefix="react-select"
+                      placeholder="Select prerequisite subjects"
+                    />
+                  </div>
+                  {formError && <div className="text-red-600 text-base text-center font-semibold mt-2">{formError}</div>}
+                  <div className="flex justify-end mt-4">
+                    <button
+                      type="submit"
+                      className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-8 py-3 rounded-xl font-bold text-lg shadow-lg transition-all duration-200"
+                      disabled={submitting}
+                    >
+                      {submitting ? "Adding..." : "Add Subject"}
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
@@ -217,6 +235,18 @@ export default function SubjectManagerPage() {
                     name="subjectName"
                     value={editForm.subjectName}
                     onChange={handleEditInputChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    required
+                  />
+                </div>
+                <div className="md:col-span-2 flex flex-col gap-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Credit</label>
+                  <input
+                    type="number"
+                    name="credit"
+                    min={0}
+                    value={editForm.credit}
+                    onChange={e => setEditForm(f => ({ ...f, credit: Number(e.target.value) }))}
                     className="px-3 py-2 border border-gray-300 rounded-lg"
                     required
                   />
@@ -261,20 +291,21 @@ export default function SubjectManagerPage() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Subject Code</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Subject Name</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">PreRequisite</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Created At</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Updated At</th>
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">Subject Code</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">Subject Name</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">Credit</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">PreRequisite</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">Updated At</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {subjects.map((subject) => (
                   <tr key={subject._id} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 px-4 py-3 text-gray-800">{subject.subjectCode}</td>
-                    <td className="border border-gray-300 px-4 py-3 text-gray-800">{subject.subjectName}</td>
-                    <td className="border border-gray-300 px-4 py-3 text-gray-800">
+                    <td className="border border-gray-300 px-4 py-3 text-gray-800 text-center">{subject.subjectCode}</td>
+                    <td className="border border-gray-300 px-4 py-3 text-gray-800 text-center">{subject.subjectName}</td>
+                    <td className="border border-gray-300 px-4 py-3 text-gray-800 text-center">{subject.credit}</td>
+                    <td className="border border-gray-300 px-4 py-3 text-gray-800 text-center">
                       {(subject.prerequisite && subject.prerequisite.length > 0)
                         ? subject.prerequisite.map(id => {
                             const idStr =
@@ -292,9 +323,8 @@ export default function SubjectManagerPage() {
                           }).join(', ')
                         : ''}
                     </td>
-                    <td className="border border-gray-300 px-4 py-3 text-gray-800">{subject.createdAt ? new Date(subject.createdAt).toLocaleString() : ""}</td>
-                    <td className="border border-gray-300 px-4 py-3 text-gray-800">{subject.updatedAt ? new Date(subject.updatedAt).toLocaleString() : ""}</td>
-                    <td className="border border-gray-300 px-4 py-3 text-gray-800">
+                    <td className="border border-gray-300 px-4 py-3 text-gray-800 text-center">{subject.updatedAt ? new Date(subject.updatedAt).toLocaleString() : ""}</td>
+                    <td className="border border-gray-300 px-4 py-3 text-gray-800 text-center">
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEdit(subject)}
