@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-alert-5ea310f83e0b.herokuapp.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ;
 
 // Create axios instance
 const axiosInstance = axios.create({
@@ -70,23 +70,19 @@ axiosInstance.interceptors.response.use(
           logout();
           return Promise.reject(error);
         }
-
-       
-        const refreshConfig = {
-          headers: {
-            'Authorization': `Bearer ${refreshToken}`
-          }
-        };
+  
+      const response = await axios.get(`${API_BASE_URL}/auth/refresh`, {
+  headers: {
+    'x-refresh-token': refreshToken 
+  }
+ 
+});
+ console.log('Refreshing token with:', response.data);
+if (response.data && response.data.accessToken) {
+          const { accessToken } = response.data;
         
-        
-        const response = await axios.get(`${API_BASE_URL}/auth/refresh`, refreshConfig);
-        
-        if (response.data) {
-          const { accessToken, refreshToken } = response.data;
-        
-          localStorage.setItem('access_token', accessToken);
-          localStorage.setItem('refresh_token', refreshToken);
-          
+         setLocalStorageItem('access_token', accessToken);
+         
          
           originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
           
