@@ -9,16 +9,21 @@ export interface Curriculum {
   updatedAt?: string;
 }
 
+export interface SubjectSemester {
+  subjectId: string;
+  semesterNumber: number;
+}
+
 export interface CurriculumCreateParams {
   curriculumName: string;
   comboId: string;
-  subjectIds: string[];
+  subjects: SubjectSemester[];
 }
 
 export interface CurriculumUpdateParams {
   curriculumName?: string;
   comboId?: string;
-  subjectIds?: string[];
+  subjects?: SubjectSemester[];
 }
 
 export interface CurriculumQueryParams {

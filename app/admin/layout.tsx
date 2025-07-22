@@ -7,6 +7,9 @@ import { useSystemUsers } from '@/hooks/useSystemUsers'
 import { useSubjects } from '@/hooks/useSubjects'
 import { useSemesters } from '@/hooks/useSemesters'
 import ProtectedRoute from "@/components/ProtectedRoute"
+import { useCombos } from "@/hooks/useCombos"
+import { useCurriculums } from "@/hooks/useCurriculums"
+import { useMajors } from "@/hooks/useMajors"
 
 export default function AdminLayout({
   children,
@@ -18,7 +21,9 @@ export default function AdminLayout({
     users: 0,
     subjects: 0,
     semesters: 0,
-    combos: 0
+    combos: 0,
+    curriculums: 0,
+    majors: 0
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -41,21 +46,41 @@ export default function AdminLayout({
     error: semestersError 
   } = useSemesters({ page: 1, limit: 1 });
 
-  // Update counts when data is loaded
+  const { 
+    data: combosData, 
+    isLoading: isLoadingCombos,
+    error: combosError 
+  } = useCombos({ page: 1, limit: 1 });
+  const { 
+    data: curriculumsData, 
+    isLoading: isLoadingCurriculums,
+    error: curriculumsError 
+  } = useCurriculums({ page: 1, limit: 1 });
+
+  const { 
+    data: majorsData, 
+    isLoading: isLoadingMajors,
+    error: majorsError 
+  } = useMajors({ page: 1, limit: 1 });
+
+
   useEffect(() => {
     const newCounts = {
       users: userData?.totalItems || 0,
       subjects: subjectsData?.totalItems || 0,
       semesters: semestersData?.totalItems || 0,
-      combos: 0 // We'll update this when the combos API is added
+      combos: combosData?.totalItems || 0,
+      curriculums: curriculumsData?.totalItems || 0,
+      majors: majorsData?.totalItems || 0,
+      
     };
     setCounts(newCounts);
     
     // Update loading state when all data is fetched
-    if (!isLoadingUsers && !isLoadingSubjects && !isLoadingSemesters) {
+    if (!isLoadingUsers && !isLoadingSubjects && !isLoadingSemesters && !isLoadingCombos && !isLoadingCurriculums && !isLoadingMajors) {
       setIsLoading(false);
     }
-  }, [userData, subjectsData, semestersData, isLoadingUsers, isLoadingSubjects, isLoadingSemesters]);
+  }, [userData, subjectsData, semestersData, isLoadingUsers, isLoadingSubjects, isLoadingSemesters, isLoadingCombos, isLoadingCurriculums, isLoadingMajors]);
 
   // Create navigation items with dynamic badges
   const adminNavItems = [
@@ -104,20 +129,22 @@ export default function AdminLayout({
       label: "Combos",
       icon: <Package className="w-4 h-4" />,
       badge: isLoading ? undefined : counts.combos,
-      badgeVariant: "secondary" as const,
+      badgeVariant: combosError ? "destructive" as const : "secondary" as const,
     },
+   
     {
       href: "/admin/curriculums",
       label: "Curriculums",
       icon: <Package className="w-4 h-4" />,
-      badge: isLoading ? undefined : counts.combos,
-      badgeVariant: "secondary" as const,
-    }, {
+      badge: isLoading ? undefined : counts.curriculums,
+      badgeVariant: curriculumsError ? "destructive" as const : "secondary" as const,
+    },
+    {
       href: "/admin/majors",
       label: "Majors",
       icon: <Package className="w-4 h-4" />,
-      badge: isLoading ? undefined : counts.combos,
-      badgeVariant: "secondary" as const,
+      badge: isLoading ? undefined : counts.majors,
+      badgeVariant: majorsError ? "destructive" as const : "secondary" as const,
     }
   ]
 

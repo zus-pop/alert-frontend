@@ -4,21 +4,10 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useCombo, useUpdateCombo } from '@/hooks/useCombos';
+import { useMajors } from '@/hooks/useMajors';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ComboForm, ComboFormValues } from '../components/ComboForm';
@@ -35,9 +24,11 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function EditComboPage({ params }: { params: { id: string } }) {
   const id = params.id;
+  // console.log('Editing combo with ID:', id);
   const router = useRouter();
   const { toast } = useToast();
   const { data: combo, isLoading: isLoadingCombo, error } = useCombo(id);
+  const { data: majorsResponse, isLoading: isLoadingMajors, error: majorsError } = useMajors();
   const { mutate: updateCombo, isPending: isUpdating } = useUpdateCombo();
 
   const form = useForm<FormValues>({
@@ -52,6 +43,8 @@ export default function EditComboPage({ params }: { params: { id: string } }) {
 
   // Fill the form with combo data when it's loaded
   useEffect(() => {
+    console.log('Combo data:', combo);
+
     if (combo) {
       form.reset({
         comboCode: combo.comboCode,
@@ -91,19 +84,22 @@ export default function EditComboPage({ params }: { params: { id: string } }) {
     return <div className="text-center py-10 text-red-500">Error loading combo: {error.message}</div>;
   }
 
-  // TODO: Add fetch for majors list when available
-  const majors = [
-    { id: '1', name: 'Software Engineering' },
-    { id: '2', name: 'Information Technology' },
-    { id: '3', name: 'Artificial Intelligence' },
-  ];
+  if (majorsError) {
+    return <div className="text-center py-10 text-red-500">Error loading majors: {majorsError.message}</div>;
+  }
+
+  // Transform majors data to match the expected format
+  const majors = majorsResponse?.data?.map(major => ({
+    id: major._id,
+    name: major.majorName
+  })) || [];
 
   return (
     <div>
       <h2 className="text-3xl font-bold mb-8">Edit Combo</h2>
       <Card>
         <CardContent className="pt-6">
-          {isLoadingCombo ? (
+          {isLoadingCombo || isLoadingMajors ? (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">

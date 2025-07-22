@@ -76,6 +76,7 @@ export default function CombosPage() {
 
   // Handle edit button click
   const handleEdit = (id: string) => {
+    // console.log('Edit combo with ID:', id);
     router.push(`/admin/combos/${id}`);
   };
 
@@ -109,10 +110,7 @@ export default function CombosPage() {
           <p className="text-gray-600 mt-1">Manage combo information in the system</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Export Data
-          </Button>
+          
           <Button 
             onClick={() => router.push('/admin/combos/new')}
             size="sm"
@@ -223,8 +221,9 @@ export default function CombosPage() {
                       <TableCell>{combo.description}</TableCell>
                       <TableCell>
                         {typeof combo.majorId === 'object' && combo.majorId !== null
-                          ? combo.majorId.majorName
-                          : combo.majorId}
+                        
+                          ? <span className="font-medium">{`${combo.majorId.majorCode} - ${combo.majorId.majorName}`}</span>
+                          : "Unknown"}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>

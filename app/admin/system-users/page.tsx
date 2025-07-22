@@ -251,14 +251,7 @@ export default function SystemUsersPage() {
           <p className="text-gray-600">Manage all administrators, managers, and supervisors in the system</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Export Data
-          </Button>
-          <Button variant="outline" size="sm">
-            <Upload className="w-4 h-4 mr-2" />
-            Import Data
-          </Button>
+         
           <Button 
             onClick={handleAddUser}
             size="sm"
