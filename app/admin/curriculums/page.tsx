@@ -137,8 +137,8 @@ export default function CurriculumListPage() {
           <p className="font-medium">Error: {error.message}</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
-          <table className="w-full">
+        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 h-screen overflow-y-auto">
+          <table className="w-full  ">
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 tracking-wider">Curriculum Name</th>

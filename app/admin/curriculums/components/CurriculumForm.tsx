@@ -47,11 +47,13 @@ export default function CurriculumForm({
 }) {
   const form = useForm<CurriculumFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: defaultValues || { curriculumName: '', comboId: '', subjects: [] },
+    defaultValues: defaultValues || { curriculumName: '', comboId: '', subjects: []},
   });
   
   const { data: combosData, isLoading: isLoadingCombos } = useCombos();
-  const { data: subjectsData, isLoading: isLoadingSubjects } = useSubjects();
+  const { data: subjectsData, isLoading: isLoadingSubjects } = useSubjects({ limit: 1000 });
+  console.log('Combos data:', combosData);
+  console.log('Subjects data:', subjectsData);
   
   const combos = combosData?.data || [];
   const subjects = subjectsData?.data || [];
@@ -63,47 +65,57 @@ export default function CurriculumForm({
   const [selectedSubjects, setSelectedSubjects] = useState<SubjectSemester[]>([]);
   
   // Update form when defaultValues change (for edit mode)
-  useEffect(() => {
-    if (defaultValues) {
-      console.log('Setting form values from defaultValues:', defaultValues);
-      
-      // Ensure subjects have the correct format for the form
-      const formattedValues = {
-        ...defaultValues,
-        subjects: defaultValues.subjects || []
-      };
-      
-      form.reset(formattedValues);
-      if (formattedValues.subjects) {
-        setSelectedSubjects(formattedValues.subjects);
-      }
-    }
-  }, [defaultValues, form]);
+ useEffect(() => {
+  if (defaultValues && subjects.length > 0) {
+    const mappedSubjects = (defaultValues.subjects || []).map(s => ({
+      subjectId: s.subjectId || s._id,
+      subjectName:
+        s.subjectName || subjects.find(sub => sub._id === (s.subjectId || s._id))?.subjectName || '',
+      semesterNumber: s.semesterNumber
+    }));
+
+    form.reset({
+      ...defaultValues,
+      subjects: mappedSubjects
+    });
+    setSelectedSubjects(mappedSubjects);
+  }
+}, [defaultValues, subjects, form]);
 
   // Find subject name by ID for display
   const getSubjectName = (id: string) => {
     const subject = subjects.find(s => s._id === id);
+    console.log('Finding subject name for ID:', id, 'Found:', subject);
     return subject ? subject.subjectName : id;
   };
 
   // Handle subject selection/deselection
-  const toggleSubject = (subjectId: string) => {
-    const currentSubjects = form.getValues("subjects") || [];
-    let newValues: SubjectSemester[];
-    
-    const subjectIndex = currentSubjects.findIndex(s => s.subjectId === subjectId);
-    
-    if (subjectIndex >= 0) {
-      // Remove the subject if it already exists
-      newValues = currentSubjects.filter(s => s.subjectId !== subjectId);
-    } else {
-      // Add the subject with the current semester number
-      newValues = [...currentSubjects, { subjectId, semesterNumber }];
-    }
-    
+const toggleSubject = (subjectId: string) => {
+  const currentSubjects = form.getValues("subjects") || [];
+  const subjectIndex = currentSubjects.findIndex(s => s.subjectId === subjectId);
+
+  if (subjectIndex >= 0) {
+    // Xóa subject nếu đã chọn
+    const newValues = currentSubjects.filter(s => s.subjectId !== subjectId);
     form.setValue("subjects", newValues, { shouldValidate: true });
     setSelectedSubjects(newValues);
-  };
+  } else {
+    // Lấy subject từ subjectsData
+    const subjectInfo = subjects.find(s => s._id === subjectId);
+    if (!subjectInfo) return;
+
+    const newValues = [
+      ...currentSubjects,
+      {
+        subjectId: subjectInfo._id,
+        subjectName: subjectInfo.subjectName,
+        semesterNumber: semesterNumber
+      }
+    ];
+    form.setValue("subjects", newValues, { shouldValidate: true });
+    setSelectedSubjects(newValues);
+  }
+};
 
   // Remove a subject from selection
   const removeSubject = (subjectId: string) => {
@@ -260,6 +272,7 @@ export default function CurriculumForm({
                                       <Check className="h-3 w-3 text-white" />
                                     )}
                                   </div>
+                                  {/* {console.log('Rendering subject:', s)} */}
                                   {s.subjectName}
                                 </div>
                               </CommandItem>
@@ -274,12 +287,15 @@ export default function CurriculumForm({
                   {selectedSubjects.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-3">
                       {selectedSubjects.map(subject => (
+                       
                         <Badge 
                           key={subject.subjectId} 
                           variant="secondary"
                           className="px-2.5 py-1 text-sm rounded-md flex items-center"
                         >
-                          <span>{getSubjectName(subject.subjectId)}</span>
+                          {console.log('Rendering subject:', subject)}
+                          <span>{subject.subjectName}</span>
+
                           <span className="ml-1 mr-1">
                             (Semester: 
                             <Input 

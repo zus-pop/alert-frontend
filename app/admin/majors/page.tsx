@@ -99,7 +99,7 @@ export default function MajorListPage() {
           <p className="font-medium">Error: {error.message}</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg overflow-hidden shadow-sm">
+        <div className="bg-white rounded-lg overflow-hidden shadow-sm h-screen overflow-y-auto">
           <table className="w-full">
             <thead className="bg-gray-100 border-b">
               <tr>
@@ -144,7 +144,7 @@ export default function MajorListPage() {
                             <circle cx="5" cy="12" r="1" />
                           </svg>
                         </Button>
-                        <div className="  mt-2 w-36 bg-white rounded-md shadow-lg z-10 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200">
+                        <div className=" absolute   mt-2 w-36 bg-white rounded-md shadow-lg z-10 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200">
                           <div className="py-1">
                             <button
                               onClick={() => router.push(`/admin/majors/${major._id}`)}
