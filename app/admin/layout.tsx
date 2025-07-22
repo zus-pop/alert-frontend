@@ -110,13 +110,13 @@ export default function AdminLayout({
       badge: isLoading ? undefined : counts.users,
       badgeVariant: userError ? "destructive" as const : "secondary" as const,
     },
-    {
-      href: "/admin/subjects",
-      label: "Subjects",
-      icon: <BookOpen className="w-4 h-4" />,
-      badge: isLoading ? undefined : counts.subjects,
-      badgeVariant: subjectsError ? "destructive" as const : "secondary" as const,
-    },
+    // {
+    //   href: "/admin/subjects",
+    //   label: "Subjects",
+    //   icon: <BookOpen className="w-4 h-4" />,
+    //   badge: isLoading ? undefined : counts.subjects,
+    //   badgeVariant: subjectsError ? "destructive" as const : "secondary" as const,
+    // },
     {
       href: "/admin/semesters",
       label: "Semesters",
