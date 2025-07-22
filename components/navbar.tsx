@@ -38,14 +38,13 @@ export function Navbar({ title, subtitle, role, navItems }: NavbarProps) {
   const router = useRouter()
 
   const { user, logout } = useAuth()
-
+console.log("User in Navbar:", user)
   // Extract first and last initial for avatar fallback
   const getInitials = () => {
-    if (!user?.name) return "U"
+    if (!user?.firstName && !user?.lastName) return "U"
 
-    const names = user.name.split(" ")
-    if (names.length === 1) return names[0].charAt(0).toUpperCase()
-    return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase()
+    const names = [user?.firstName, user?.lastName].filter(Boolean)
+    return names.map(name => name?.charAt(0).toUpperCase()).join("")
   }
 
 
@@ -69,18 +68,7 @@ export function Navbar({ title, subtitle, role, navItems }: NavbarProps) {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Notifications */}
-            <Button variant="ghost" size="sm" className="relative">
-              <Bell className="w-5 h-5" />
-              <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center bg-red-500 text-white text-xs">
-                3
-              </Badge>
-            </Button>
-
-            {/* Settings */}
-            <Button variant="ghost" size="sm">
-              <Settings className="w-5 h-5" />
-            </Button>
+          
 
             {/* User Menu */}
             <DropdownMenu>
@@ -96,7 +84,7 @@ export function Navbar({ title, subtitle, role, navItems }: NavbarProps) {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
 
-                    <p className="text-sm font-medium leading-none">{user?.name || "User"}</p>
+                    <p className="text-sm font-medium leading-none">{`${user?.firstName} ${user?.lastName}` || "User"}</p>
                     <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
                     <p className="text-xs leading-none text-muted-foreground capitalize">
                       {user?.role?.toLowerCase()}

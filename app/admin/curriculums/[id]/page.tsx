@@ -5,7 +5,15 @@ import CurriculumForm from '../components/CurriculumForm';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { Curriculum } from '@/services/curriculumApi.types';
+import { Curriculum, SubjectSemester } from '@/services/curriculumApi.types';
+
+// Define an interface for subjects with semester info in response
+interface SubjectWithSemester {
+  _id: string;
+  subjectCode: string;
+  subjectName: string;
+  semesterNumber?: number;
+}
 
 export default function EditCurriculumPage({ params }: { params: { id: string } }) {
   const id = params.id;
@@ -43,13 +51,36 @@ export default function EditCurriculumPage({ params }: { params: { id: string } 
     );
   }
 
-  // Transform curriculum data to form format
+  // Transform curriculum data to form format with subject semester information
   const formDefaultValues = curriculum ? {
     curriculumName: curriculum.curriculumName,
     comboId: typeof curriculum.comboId === 'string' ? curriculum.comboId : (curriculum.comboId as any)?._id,
-    subjectIds: curriculum.subjects?.map(subject => 
-      typeof subject === 'string' ? subject : (subject as any)._id
-    ) || []
+    subjects: curriculum.subjects?.map(subject => {
+      // Handle different possible formats of subject data from API
+      if (typeof subject === 'string') {
+        // If it's just a string ID
+        return { subjectId: subject, semesterNumber: 1 };
+      } else if (subject._id) {
+        const subjectWithSemester = subject as SubjectWithSemester;
+        return {
+          subjectId: subjectWithSemester._id,
+          // Try to get semesterNumber from multiple possible locations in the object
+          semesterNumber: 
+            // First try direct semesterNumber property
+            subjectWithSemester.semesterNumber !== undefined ? subjectWithSemester.semesterNumber : 
+            // Then try nested data structure that might be returned by API
+            (subject as any).semesterNumber !== undefined ? (subject as any).semesterNumber :
+            // Default to 1 if not found
+            1
+        };
+      } else {
+        // Fallback for any other format
+        return {
+          subjectId: (subject as any).subjectId || (subject as any)._id,
+          semesterNumber: (subject as any).semesterNumber || 1
+        };
+      }
+    }) || []
   } : undefined;
 
   return (

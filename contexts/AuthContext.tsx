@@ -11,7 +11,8 @@ interface User {
   _id?: string;
   email: string;
   role: string;
-  name?: string;
+  lastName?: string;
+  firstName?: string;
   image?: string;
 }
 

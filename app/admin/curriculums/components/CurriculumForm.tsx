@@ -8,7 +8,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDes
 import { useCombos } from '@/hooks/useCombos';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useEffect, useState } from 'react';
-import { CurriculumCreateParams } from '@/services/curriculumApi.types';
+import { CurriculumCreateParams, SubjectSemester } from '@/services/curriculumApi.types';
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,7 +20,12 @@ import { Badge } from "@/components/ui/badge";
 const formSchema = z.object({
   curriculumName: z.string().min(1, 'Name is required'),
   comboId: z.string().min(1, 'Combo is required'),
-  subjectIds: z.array(z.string()).min(1, 'At least one subject is required'),
+  subjects: z.array(
+    z.object({
+      subjectId: z.string(),
+      semesterNumber: z.number()
+    })
+  ).min(1, 'At least one subject is required'),
 });
 
 export type CurriculumFormValues = CurriculumCreateParams;
@@ -42,7 +47,7 @@ export default function CurriculumForm({
 }) {
   const form = useForm<CurriculumFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: defaultValues || { curriculumName: '', comboId: '', subjectIds: [] },
+    defaultValues: defaultValues || { curriculumName: '', comboId: '', subjects: [] },
   });
   
   const { data: combosData, isLoading: isLoadingCombos } = useCombos();
@@ -51,14 +56,27 @@ export default function CurriculumForm({
   const combos = combosData?.data || [];
   const subjects = subjectsData?.data || [];
 
+  // State to track semester number for new subject entries
+  const [semesterNumber, setSemesterNumber] = useState<number>(1);
+  
   // State to track selected subjects for UI display
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [selectedSubjects, setSelectedSubjects] = useState<SubjectSemester[]>([]);
   
   // Update form when defaultValues change (for edit mode)
   useEffect(() => {
     if (defaultValues) {
-      form.reset(defaultValues);
-      setSelectedSubjects(defaultValues.subjectIds || []);
+      console.log('Setting form values from defaultValues:', defaultValues);
+      
+      // Ensure subjects have the correct format for the form
+      const formattedValues = {
+        ...defaultValues,
+        subjects: defaultValues.subjects || []
+      };
+      
+      form.reset(formattedValues);
+      if (formattedValues.subjects) {
+        setSelectedSubjects(formattedValues.subjects);
+      }
     }
   }, [defaultValues, form]);
 
@@ -70,23 +88,27 @@ export default function CurriculumForm({
 
   // Handle subject selection/deselection
   const toggleSubject = (subjectId: string) => {
-    const currentValues = form.getValues("subjectIds") || [];
-    let newValues: string[];
+    const currentSubjects = form.getValues("subjects") || [];
+    let newValues: SubjectSemester[];
     
-    if (currentValues.includes(subjectId)) {
-      newValues = currentValues.filter(id => id !== subjectId);
+    const subjectIndex = currentSubjects.findIndex(s => s.subjectId === subjectId);
+    
+    if (subjectIndex >= 0) {
+      // Remove the subject if it already exists
+      newValues = currentSubjects.filter(s => s.subjectId !== subjectId);
     } else {
-      newValues = [...currentValues, subjectId];
+      // Add the subject with the current semester number
+      newValues = [...currentSubjects, { subjectId, semesterNumber }];
     }
     
-    form.setValue("subjectIds", newValues, { shouldValidate: true });
+    form.setValue("subjects", newValues, { shouldValidate: true });
     setSelectedSubjects(newValues);
   };
 
   // Remove a subject from selection
   const removeSubject = (subjectId: string) => {
-    const newValues = form.getValues("subjectIds").filter(id => id !== subjectId);
-    form.setValue("subjectIds", newValues, { shouldValidate: true });
+    const newValues = form.getValues("subjects").filter(s => s.subjectId !== subjectId);
+    form.setValue("subjects", newValues, { shouldValidate: true });
     setSelectedSubjects(newValues);
   };
 
@@ -112,6 +134,23 @@ export default function CurriculumForm({
                 </FormItem>
               )}
             />
+            
+            {/* <FormItem>
+              <FormLabel className="text-base font-medium">Default Semester Number for Subjects</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number"
+                  placeholder="Enter default semester number for new subjects" 
+                  className="h-12" 
+                  value={semesterNumber}
+                  onChange={(e) => setSemesterNumber(parseInt(e.target.value) || 1)}
+                  min="1"
+                />
+              </FormControl>
+              <FormDescription>
+                This number will be used as the default semester number for newly added subjects
+              </FormDescription>
+            </FormItem> */}
             
             <FormField
               control={form.control}
@@ -173,7 +212,7 @@ export default function CurriculumForm({
             
             <FormField
               control={form.control}
-              name="subjectIds"
+              name="subjects"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel className="text-base font-medium">Subjects</FormLabel>
@@ -212,12 +251,12 @@ export default function CurriculumForm({
                                   <div 
                                     className={cn(
                                       "mr-2 h-4 w-4 border rounded flex items-center justify-center",
-                                      selectedSubjects.includes(s._id) 
+                                      selectedSubjects.some(subject => subject.subjectId === s._id) 
                                         ? "bg-primary border-primary" 
                                         : "border-input"
                                     )}
                                   >
-                                    {selectedSubjects.includes(s._id) && (
+                                    {selectedSubjects.some(subject => subject.subjectId === s._id) && (
                                       <Check className="h-3 w-3 text-white" />
                                     )}
                                   </div>
@@ -231,19 +270,39 @@ export default function CurriculumForm({
                     </PopoverContent>
                   </Popover>
                   
-                  {/* Show selected subjects as badges */}
+                  {/* Show selected subjects as badges with editable semester number */}
                   {selectedSubjects.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-3">
-                      {selectedSubjects.map(subjectId => (
+                      {selectedSubjects.map(subject => (
                         <Badge 
-                          key={subjectId} 
+                          key={subject.subjectId} 
                           variant="secondary"
-                          className="px-2.5 py-1 text-sm rounded-md"
+                          className="px-2.5 py-1 text-sm rounded-md flex items-center"
                         >
-                          {getSubjectName(subjectId)}
+                          <span>{getSubjectName(subject.subjectId)}</span>
+                          <span className="ml-1 mr-1">
+                            (Semester: 
+                            <Input 
+                              type="number" 
+                              className="w-12 h-6 px-1 ml-1 mr-1 inline-block"
+                              value={subject.semesterNumber}
+                              min="1"
+                              onChange={(e) => {
+                                const newSemester = parseInt(e.target.value) || 1;
+                                const newSubjects = selectedSubjects.map(s => 
+                                  s.subjectId === subject.subjectId 
+                                    ? { ...s, semesterNumber: newSemester } 
+                                    : s
+                                );
+                                form.setValue("subjects", newSubjects, { shouldValidate: true });
+                                setSelectedSubjects(newSubjects);
+                              }}
+                            />
+                            )
+                          </span>
                           <button 
                             type="button"
-                            onClick={() => removeSubject(subjectId)}
+                            onClick={() => removeSubject(subject.subjectId)}
                             className="ml-2 text-muted-foreground hover:text-foreground"
                           >
                             ×
