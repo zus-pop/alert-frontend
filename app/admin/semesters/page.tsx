@@ -173,10 +173,7 @@ export default function SemestersPage() {
           <p className="text-gray-600">Manage semester information in the system</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Export Data
-          </Button>
+          
           <Button 
             onClick={() => router.push('/admin/semesters/new')}
             size="sm"

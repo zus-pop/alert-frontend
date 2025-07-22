@@ -55,7 +55,9 @@ export interface Alert {
   title: string;
   content: string;
   supervisorResponse?: SupervisorResponse;
-  date: string;
+  date?: string;
+  createdAt: string;
+  updatedAt: string;
   status: 'NOT RESPONDED' | 'RESPONDED' | 'RESOLVED';
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
   isRead: boolean;

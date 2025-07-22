@@ -147,14 +147,7 @@ export default function SubjectsPage() {
           <p className="text-gray-600">Manage subject information and data</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Export Data
-          </Button>
-          <Button variant="outline" size="sm">
-            <Upload className="w-4 h-4 mr-2" />
-            Import Data
-          </Button>
+        
           <Button 
             onClick={() => router.push('/admin/subjects/new')}
             size="sm"

@@ -71,7 +71,21 @@ const statusLabels = {
 }
 
 // Custom hooks for specific statuses
-const useRespondedAlerts = (page = 1, limit = 20) => {
+
+// Helper to build query string from filters
+const buildAlertQuery = (status, riskLevel, title, page, limit) => {
+  const params = [];
+  if (status && status !== "ALL") params.push(`status=${encodeURIComponent(status)}`);
+  if (riskLevel && riskLevel !== "ALL") params.push(`riskLevel=${encodeURIComponent(riskLevel)}`);
+  if (title && title.trim() !== "") params.push(`title=${encodeURIComponent(title.trim())}`);
+  params.push(`page=${page}`);
+  params.push(`limit=${limit}`);
+  return `/alerts?${params.join("&")}`;
+};
+
+const useRespondedAlerts = (filters) => {
+  const { status, riskLevel, title, page, limit } = filters;
+  const query = buildAlertQuery("RESPONDED", riskLevel, title, page, limit);
   const { 
     data, 
     isLoading, 
@@ -81,10 +95,9 @@ const useRespondedAlerts = (page = 1, limit = 20) => {
     data: Alert[];
     totalItems: number;
     totalPage: number;
-  }>(`/alerts?status=RESPONDED&page=${page}&limit=${limit}`, ['alerts-responded', String(page), String(limit)], {
+  }>(query, ['alerts-responded', riskLevel, title, String(page), String(limit)], {
     enabled: true,
   });
-
   return {
     alerts: data?.data || [],
     totalItems: data?.totalItems || 0,
@@ -95,7 +108,9 @@ const useRespondedAlerts = (page = 1, limit = 20) => {
   };
 };
 
-const useNotRespondedAlerts = (page = 1, limit = 20) => {
+const useNotRespondedAlerts = (filters) => {
+  const { status, riskLevel, title, page, limit } = filters;
+  const query = buildAlertQuery("NOT RESPONDED", riskLevel, title, page, limit);
   const { 
     data, 
     isLoading, 
@@ -105,10 +120,9 @@ const useNotRespondedAlerts = (page = 1, limit = 20) => {
     data: Alert[];
     totalItems: number;
     totalPage: number;
-  }>(`/alerts?status=NOT%20RESPONDED&page=${page}&limit=${limit}`, ['alerts-not-responded', String(page), String(limit)], {
+  }>(query, ['alerts-not-responded', riskLevel, title, String(page), String(limit)], {
     enabled: true,
   });
-
   return {
     alerts: data?.data || [],
     totalItems: data?.totalItems || 0,
@@ -136,11 +150,24 @@ export default function AlertsPage() {
   })
   const [dialogOpen, setDialogOpen] = useState(false)
 
+
   // State cho tab và phân trang từng tab
   const [activeTab, setActiveTab] = useState<string>("not responded")
   const [respondedPage, setRespondedPage] = useState(1)
   const [notRespondedPage, setNotRespondedPage] = useState(1)
   const pageLimit = 20
+
+  // Filters cho từng tab
+  const respondedFilters = {
+    ...filters,
+    page: respondedPage,
+    limit: pageLimit,
+  }
+  const notRespondedFilters = {
+    ...filters,
+    page: notRespondedPage,
+    limit: pageLimit,
+  }
 
   // Fetch responded alerts (chỉ cho tab responded)
   const {
@@ -149,7 +176,7 @@ export default function AlertsPage() {
     totalPages: respondedTotalPages,
     isLoading: isRespondedLoading,
     refetch: refetchResponded
-  } = useRespondedAlerts(respondedPage, pageLimit)
+  } = useRespondedAlerts(respondedFilters)
 
   // Fetch not responded alerts (chỉ cho tab not responded)
   const {
@@ -158,7 +185,7 @@ export default function AlertsPage() {
     totalPages: notRespondedTotalPages,
     isLoading: isNotRespondedLoading,
     refetch: refetchNotResponded
-  } = useNotRespondedAlerts(notRespondedPage, pageLimit)
+  } = useNotRespondedAlerts(notRespondedFilters)
 
   // Update alert mutation
   const { updateAlert, isLoading: isUpdating } = useUpdateAlert()
@@ -235,8 +262,9 @@ export default function AlertsPage() {
     setFilters(prev => ({
       ...prev,
       [key]: value,
-      page: 1, // Reset về trang 1 khi đổi filter
     }))
+    setRespondedPage(1);
+    setNotRespondedPage(1);
   }
   const resetFilters = () => {
     setFilters({
@@ -244,8 +272,10 @@ export default function AlertsPage() {
       riskLevel: "ALL",
       title: "",
       page: 1,
-      limit: 5,
+      limit: 20,
     })
+    setRespondedPage(1);
+    setNotRespondedPage(1);
   }
 
   return (
@@ -336,7 +366,7 @@ export default function AlertsPage() {
                           <CardTitle className="text-lg">
                             {alert.enrollmentId?.studentId?.firstName || '-'} {alert.enrollmentId?.studentId?.lastName || '-'}
                           </CardTitle>
-                          <Badge variant="outline">{alert.enrollmentId?.studentId?.email || '-'}</Badge>
+                          {/* <Badge variant="outline">{alert.enrollmentId?.studentId?.email || '-'}</Badge> */}
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge className={statusColors[alert.status]}>Responded</Badge>
@@ -389,9 +419,20 @@ export default function AlertsPage() {
                             </div>
                             <p className="mt-2 text-sm">
                               Status: 
-                              <Badge className="ml-2" variant={alert.enrollmentId?.status === 'PASSED' ? 'default' : 'destructive'}>
-                                {alert.enrollmentId?.status || '-'}
-                              </Badge>
+                             <Badge
+  className="ml-2"
+  variant={
+    alert.enrollmentId?.status === 'PASSED'
+      ? 'default'
+      : alert.enrollmentId?.status === 'NOT PASSED'
+      ? 'destructive'
+      : alert.enrollmentId?.status === 'IN PROGRESS'
+      ? 'secondary'
+      : 'default'
+  }
+>
+  {alert.enrollmentId?.status || '-'}
+</Badge>
                             </p>
                           </div>
                       
@@ -466,7 +507,7 @@ export default function AlertsPage() {
                           <CardTitle className="text-lg">
                             {alert.enrollmentId?.studentId?.firstName || '-'} {alert.enrollmentId?.studentId?.lastName || '-'}
                           </CardTitle>
-                          <Badge variant="outline">{alert.enrollmentId?.studentId?.email || '-'}</Badge>
+                          {/* <Badge variant="outline">{alert.enrollmentId?.studentId?.email || '-'}</Badge> */}
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge className={statusColors[alert.status]}>
@@ -483,7 +524,7 @@ export default function AlertsPage() {
                           )}
                           <div className="flex items-center gap-1 text-sm text-gray-500">
                             <Calendar className="w-3 h-3" />
-                            {new Date(alert.date).toLocaleString("vi-VN")}
+                            {new Date(alert.createdAt).toLocaleString("vi-VN")}
                           </div>
                         </div>
                       </div>
@@ -520,9 +561,20 @@ export default function AlertsPage() {
                         </div>
                         <p className="mt-2 text-sm">
                           Status: 
-                          <Badge className="ml-2" variant={alert.enrollmentId?.status === 'PASSED' ? 'default' : 'destructive'}>
-                            {alert.enrollmentId?.status || '-'}
-                          </Badge>
+                          <Badge
+  className="ml-2"
+  variant={
+    alert.enrollmentId?.status === 'PASSED'
+      ? 'green'
+      : alert.enrollmentId?.status === 'NOT PASSED'
+      ? 'destructive'
+      : alert.enrollmentId?.status === 'IN PROGRESS'
+      ? 'default'
+      : 'default'
+  }
+>
+  {alert.enrollmentId?.status || '-'}
+</Badge>
                         </p>
                       </div>
                     </div>
@@ -622,7 +674,7 @@ export default function AlertsPage() {
                   </Badge>
                   <div className="flex items-center gap-1 text-xs text-gray-500">
                     <Calendar className="w-3 h-3" />
-                    {new Date(selectedAlert.date).toLocaleDateString("vi-VN")}
+                    {new Date(selectedAlert.createdAt).toLocaleDateString("vi-VN")}
                   </div>
                 </div>
                 <div>
