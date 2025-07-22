@@ -15,7 +15,15 @@ export default function CourseManagerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ semesterId: "", subjectInput: "", imageInput: null as File | null, imageInputUrl: "", subjects: [] as { subjectId: string, image: File | null, imageUrl: string, subjectCode: string, subjectName: string }[] });
+  // Cập nhật state form để có titleInput và title cho từng subject
+  const [form, setForm] = useState({
+    semesterId: "",
+    subjectInput: "",
+    titleInput: "",
+    imageInput: null as File | null,
+    imageInputUrl: "",
+    subjects: [] as { subjectId: string, title: string, image: File | null, imageUrl: string, subjectCode: string, subjectName: string }[]
+  });
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [editingCourse, setEditingCourse] = useState<any | null>(null);
@@ -58,16 +66,17 @@ export default function CourseManagerPage() {
   };
 
   const handleAddSubject = () => {
-    if (!form.subjectInput || !form.imageInput) return;
+    if (!form.subjectInput || !form.titleInput || !form.imageInput) return;
     const subjectObj = subjects.find(s => s._id === form.subjectInput);
     if (!subjectObj) return;
-    if (form.subjects.some(s => s.subjectId === form.subjectInput)) return; // No duplicate
+    if (form.subjects.some(s => s.subjectId === form.subjectInput && s.title === form.titleInput)) return; // No duplicate
     setForm(f => ({
       ...f,
       subjects: [
         ...f.subjects,
         {
           subjectId: form.subjectInput,
+          title: form.titleInput,
           image: form.imageInput,
           imageUrl: form.imageInputUrl,
           subjectCode: subjectObj.subjectCode,
@@ -75,6 +84,7 @@ export default function CourseManagerPage() {
         }
       ],
       subjectInput: "",
+      titleInput: "",
       imageInput: null,
       imageInputUrl: ""
     }));
@@ -95,28 +105,49 @@ export default function CourseManagerPage() {
     }));
   };
 
+  // 1. Khi chọn đủ các trường (titleInput, subjectInput, semesterId, imageInput), cho phép bấm Save ngay mà không cần phải ấn dấu +
+  // 2. Nút + chỉ dùng để thêm nhiều course vào 1 kỳ (giữ nguyên logic add vào danh sách subjects)
+  // 3. Nếu chỉ muốn tạo 1 course, khi bấm Save sẽ tự động lấy thông tin từ các trường input hiện tại (nếu chưa add vào danh sách subjects) và submit luôn
+
+  // Sửa handleSubmit để nếu form.subjects.length === 0, sẽ lấy thông tin từ các trường input hiện tại và submit như 1 course
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
-    if (!form.semesterId || form.subjects.length === 0) {
-      setFormError("Please select a semester and add at least one subject!");
+    let subjectsToSubmit = form.subjects;
+    // Nếu chưa add vào danh sách, nhưng đã điền đủ các trường, thì submit luôn
+    if (subjectsToSubmit.length === 0 && form.titleInput && form.subjectInput && form.semesterId && form.imageInput) {
+      const subjectObj = subjects.find(s => s._id === form.subjectInput);
+      if (subjectObj) {
+        subjectsToSubmit = [{
+          subjectId: form.subjectInput,
+          title: form.titleInput,
+          image: form.imageInput,
+          imageUrl: form.imageInputUrl,
+          subjectCode: subjectObj.subjectCode,
+          subjectName: subjectObj.subjectName
+        }];
+      }
+    }
+    if (!form.semesterId || subjectsToSubmit.length === 0) {
+      setFormError("Please select a semester and fill all fields!");
       return;
     }
-    if (form.subjects.some(s => !s.image)) {
-      setFormError("Each subject must have an image!");
+    if (subjectsToSubmit.some(s => !s.image || !s.title)) {
+      setFormError("Each course must have a title and image!");
       return;
     }
     setSubmitting(true);
     try {
-      await Promise.all(form.subjects.map((s) => {
+      await Promise.all(subjectsToSubmit.map((s) => {
         const formData = new FormData();
+        formData.append("title", s.title);
         formData.append("subjectId", s.subjectId);
         formData.append("semesterId", form.semesterId);
         if (s.image) formData.append("image", s.image);
         return api.post("/courses", formData, { headers: { "Content-Type": "multipart/form-data" } });
       }));
       setShowForm(false);
-      setForm({ semesterId: "", subjectInput: "", imageInput: null, imageInputUrl: "", subjects: [] });
+      setForm({ semesterId: "", subjectInput: "", titleInput: "", imageInput: null, imageInputUrl: "", subjects: [] });
       setLoading(true);
       api.get("/courses?limit=1000").then(res => setCourses(res.data.data)).finally(() => setLoading(false));
     } catch (err) {
@@ -228,6 +259,18 @@ export default function CourseManagerPage() {
                       ))}
                     </select>
                   </div>
+                  <div className="flex-1">
+                    <label className="block text-base font-medium text-gray-700 mb-1">Course Title</label>
+                    <input
+                      type="text"
+                      name="titleInput"
+                      value={form.titleInput || ""}
+                      onChange={handleInputChange}
+                      className="px-3 py-2 border border-gray-300 rounded-lg w-full"
+                      placeholder="Enter course title"
+                      required
+                    />
+                  </div>
                   <div className="flex gap-4 items-end flex-row w-full">
                     <div className="flex-1">
                       <label className="block text-base font-medium text-gray-700 mb-1">Subject</label>
@@ -266,7 +309,7 @@ export default function CourseManagerPage() {
                       type="button"
                       className="bg-blue-600 hover:bg-blue-700 text-white w-8 h-8 rounded-lg flex items-center justify-center"
                       onClick={handleAddSubject}
-                      disabled={!form.subjectInput || !form.imageInput}
+                      disabled={!form.subjectInput || !form.titleInput || !form.imageInput}
                       title="Add subject"
                     >
                       <Plus className="w-4 h-4" />
@@ -278,7 +321,7 @@ export default function CourseManagerPage() {
                       {form.subjects.map((s) => (
                         <div key={s.subjectId} className="flex items-center border rounded-lg p-2 bg-gray-50 gap-4 min-h-[56px]">
                           <div className="flex-1 flex items-center h-12">
-                            <div className="font-medium text-center truncate w-full">{s.subjectCode} - {s.subjectName}</div>
+                            <div className="font-medium text-center truncate w-full">{s.title} ({s.subjectCode} - {s.subjectName})</div>
                           </div>
                           <div className="flex-1 flex items-center justify-center h-12">
                             {s.imageUrl && (
@@ -326,67 +369,72 @@ export default function CourseManagerPage() {
             </div>
           )}
           {editingCourse && (
-            <form onSubmit={handleEditSubmit} className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 bg-yellow-50 p-4 rounded-lg border border-yellow-300">
-              <div className="md:col-span-3 text-lg font-semibold text-yellow-800 mb-2">Edit Course</div>
-              <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                <select
-                  name="subjectId"
-                  value={editForm.subjectId}
-                  onChange={handleEditInputChange}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
-                  required
-                >
-                  <option value="">Select subject</option>
-                  {subjects.map(s => (
-                    <option key={s._id} value={s._id}>{s.subjectCode} - {s.subjectName}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Semester</label>
-                <select
-                  name="semesterId"
-                  value={editForm.semesterId}
-                  onChange={handleEditInputChange}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
-                  required
-                >
-                  <option value="">Select semester</option>
-                  {semesters.map(s => (
-                    <option key={s._id} value={s._id}>{s.semesterName}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="md:col-span-1 flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
-                <input
-                  type="file"
-                  name="image"
-                  accept="image/*"
-                  onChange={handleEditInputChange}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              {editError && <div className="md:col-span-3 text-red-600 text-sm">{editError}</div>}
-              <div className="md:col-span-3 flex justify-end gap-2">
-                <button
-                  type="button"
-                  className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-lg font-medium"
-                  onClick={() => setEditingCourse(null)}
-                  disabled={editSubmitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg font-medium"
-                  disabled={editSubmitting}
-                >
-                  {editSubmitting ? "Saving..." : "Save changes"}
-                </button>
-              </div>
-            </form>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+              <form onSubmit={handleEditSubmit} className="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-xl relative border-2 border-yellow-200 animate-fade-in">
+                <button type="button" onClick={() => setEditingCourse(null)} className="absolute top-4 right-4 text-gray-400 hover:text-yellow-600 text-3xl font-bold">×</button>
+                <h2 className="text-2xl font-bold text-center mb-8 text-yellow-700 tracking-wide">Edit Course</h2>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col">
+                    <label className="block text-base font-semibold text-gray-700 mb-2">Subject</label>
+                    <select
+                      name="subjectId"
+                      value={editForm.subjectId}
+                      onChange={handleEditInputChange}
+                      className="px-4 py-3 border border-gray-300 rounded-xl text-lg focus:ring-2 focus:ring-yellow-400"
+                      required
+                    >
+                      <option value="">Select subject</option>
+                      {subjects.map(s => (
+                        <option key={s._id} value={s._id}>{s.subjectCode} - {s.subjectName}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="block text-base font-semibold text-gray-700 mb-2">Semester</label>
+                    <select
+                      name="semesterId"
+                      value={editForm.semesterId}
+                      onChange={handleEditInputChange}
+                      className="px-4 py-3 border border-gray-300 rounded-xl text-lg focus:ring-2 focus:ring-yellow-400"
+                      required
+                    >
+                      <option value="">Select semester</option>
+                      {semesters.map(s => (
+                        <option key={s._id} value={s._id}>{s.semesterName}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="block text-base font-semibold text-gray-700 mb-2">Image</label>
+                    <input
+                      type="file"
+                      name="image"
+                      accept="image/*"
+                      onChange={handleEditInputChange}
+                      className="px-4 py-3 border border-gray-300 rounded-xl text-lg focus:ring-2 focus:ring-yellow-400"
+                    />
+                  </div>
+                  {editError && <div className="text-red-600 text-base text-center font-semibold mt-2">{editError}</div>}
+                  <div className="flex justify-end gap-2 mt-4">
+                    <button
+                      type="button"
+                      className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-xl font-bold text-lg"
+                      onClick={() => setEditingCourse(null)}
+                      disabled={editSubmitting}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white px-8 py-3 rounded-xl font-bold text-lg shadow-lg transition-all duration-200"
+                      disabled={editSubmitting}
+                    >
+                      {editSubmitting ? "Saving..." : "Save changes"}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
           )}
           {/* Thay thế bảng bằng grid card */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -406,8 +454,12 @@ export default function CourseManagerPage() {
                   />
                 )}
                 <div className="flex-1">
-                  <div className="font-bold text-lg text-blue-700">{course.subjectId?.subjectCode}</div>
-                  <div className="text-gray-800 mb-1">{course.subjectId?.subjectName}</div>
+                  <div className="font-bold text-lg text-blue-700">
+                    {course.title || course.subjectId?.subjectCode}
+                  </div>
+                  <div className="text-gray-800 mb-1">
+                    {course.subjectId?.subjectCode} - {course.subjectId?.subjectName}
+                  </div>
                   <div className="text-sm text-gray-500 mb-2">Semester: {course.semesterId?.semesterName}</div>
                 </div>
                 <div className="flex gap-2 mt-2">

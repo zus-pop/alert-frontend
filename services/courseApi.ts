@@ -2,6 +2,7 @@ import { api } from './api';
 
 export interface Course {
   _id: string;
+  title?: string;
   subjectId: {
     _id: string;
     subjectCode: string;

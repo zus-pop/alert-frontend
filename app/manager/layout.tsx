@@ -28,6 +28,11 @@ const supervisorNavItems = [
     label: "Course Management",
     icon: <Layers className="w-4 h-4" />,
   },
+  {
+    href: "/manager/grademanagement",
+    label: "Grade Management",
+    icon: <BarChart3 className="w-4 h-4" />,
+  },
 ]
 
 export default function SupervisorLayout({
