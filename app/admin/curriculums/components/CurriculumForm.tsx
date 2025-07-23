@@ -16,7 +16,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-//semesterNumber min =0 , max =9
 const formSchema = z.object({
   curriculumName: z.string().min(1, 'Name is required'),
   comboId: z.string().min(1, 'Combo is required'),
