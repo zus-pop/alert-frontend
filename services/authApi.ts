@@ -40,15 +40,18 @@ interface JwtPayload {
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = getLocalStorageItem('access_token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+    const accessToken = localStorage.getItem('access_token');
+    const refreshToken = localStorage.getItem('refresh_token');
+  if (accessToken) {
+    config.headers["Authorization"] = `Bearer ${accessToken}`;
   }
+   if (refreshToken) {
+    config.headers["x-refresh-token"] = refreshToken;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+}
 );
 
 
@@ -60,16 +63,12 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config;
     
     
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry &&
+      !originalRequest.url.includes("auth/refresh")) {
       originalRequest._retry = true;
       
       try {
-        const refreshToken = getLocalStorageItem('refresh_token');
-        if (!refreshToken) {
-         
-          logout();
-          return Promise.reject(error);
-        }
+      const refreshToken = localStorage.getItem('refresh_token');
   
       const response = await axios.get(`${API_BASE_URL}/auth/refresh`, {
   headers: {
@@ -77,14 +76,15 @@ axiosInstance.interceptors.response.use(
   }
  
 });
- console.log('Refreshing token with:', response.data);
-if (response.data && response.data.accessToken) {
-          const { accessToken } = response.data;
-        
-         setLocalStorageItem('access_token', accessToken);
-         
-         
-          originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+
+  const newAccessToken = response.data.accessToken;
+       
+
+      
+        if (newAccessToken) {
+          localStorage.setItem('access_token', newAccessToken);
+          originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+          
           
         
           return axiosInstance(originalRequest);

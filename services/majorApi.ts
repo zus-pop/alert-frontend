@@ -1,4 +1,11 @@
 import { api } from './api';
+import { 
+  Major, 
+  MajorCreateParams, 
+  MajorQueryParams, 
+  MajorResponse,
+  MajorUpdateParams 
+} from './majorApi.types';
 
 // Interface cho Major, Combo
 export interface Major {
@@ -22,27 +29,32 @@ export interface Combo {
 }
 
 // CRUD cho major
-export async function getMajors(params?: any): Promise<Major[]> {
+export async function getMajors(params?: MajorQueryParams): Promise<MajorResponse> {
   const res = await api.get('/majors', { params });
-  return res.data.data || res.data;
+  return res.data;
 }
+
 export async function getMajor(id: string): Promise<Major> {
   const res = await api.get(`/majors/${id}`);
   return res.data;
 }
-export async function createMajor(data: Partial<Major>): Promise<Major> {
+
+export async function createMajor(data: MajorCreateParams): Promise<Major> {
   const res = await api.post('/majors', data);
   return res.data;
 }
-export async function updateMajor(id: string, data: Partial<Major>): Promise<Major> {
+
+export async function updateMajor(id: string, data: MajorUpdateParams): Promise<Major> {
   const res = await api.patch(`/majors/${id}`, data);
   return res.data;
 }
+
 export async function deleteMajor(id: string): Promise<void> {
-  await api.delete(`/majors/${id}`);
+  const res = await api.delete(`/majors/${id}`);
+  return res.data;
 }
 
-// CRUD cho combo, curriculum (nếu cần)
+// CRUD cho combo
 export async function getCombos(params?: any): Promise<Combo[]> {
   const res = await api.get('/combos', { params });
   return res.data.data || res.data;

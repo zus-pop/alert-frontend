@@ -16,14 +16,15 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-
+//semesterNumber min =0 , max =9
 const formSchema = z.object({
   curriculumName: z.string().min(1, 'Name is required'),
   comboId: z.string().min(1, 'Combo is required'),
   subjects: z.array(
     z.object({
       subjectId: z.string(),
-      semesterNumber: z.number()
+
+      semesterNumber: z.number().min(0).max(9)
     })
   ).min(1, 'At least one subject is required'),
 });
@@ -293,7 +294,7 @@ const toggleSubject = (subjectId: string) => {
                           variant="secondary"
                           className="px-2.5 py-1 text-sm rounded-md flex items-center"
                         >
-                          {console.log('Rendering subject:', subject)}
+                          
                           <span>{subject.subjectName}</span>
 
                           <span className="ml-1 mr-1">
@@ -302,9 +303,9 @@ const toggleSubject = (subjectId: string) => {
                               type="number" 
                               className="w-12 h-6 px-1 ml-1 mr-1 inline-block"
                               value={subject.semesterNumber}
-                              min="1"
+                              min="0"
                               onChange={(e) => {
-                                const newSemester = parseInt(e.target.value) || 1;
+                                const newSemester = parseInt(e.target.value) || 0;
                                 const newSubjects = selectedSubjects.map(s => 
                                   s.subjectId === subject.subjectId 
                                     ? { ...s, semesterNumber: newSemester } 
