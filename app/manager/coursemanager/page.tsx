@@ -193,6 +193,10 @@ export default function CourseManagerPage() {
       setEditSubmitting(false);
       setLoading(true);
       api.get("/courses?limit=1000").then(res => setCourses(res.data.data)).finally(() => setLoading(false));
+      // Nếu filterSemester đang là kỳ cũ thì chuyển sang kỳ mới
+      if (filterSemester && filterSemester !== editForm.semesterId) {
+        setFilterSemester(editForm.semesterId);
+      }
     } catch (err) {
       setEditError("Failed to update course!");
       setEditSubmitting(false);
