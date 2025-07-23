@@ -26,6 +26,26 @@ export async function getMajors(params?: MajorQueryParams): Promise<MajorRespons
   return res.data;
 }
 
+export async function getMajor(id: string): Promise<Major> {
+  const res = await api.get(`/majors/${id}`);
+  return res.data;
+}
+
+export async function createMajor(data: MajorCreateParams): Promise<Major> {
+  const res = await api.post('/majors', data);
+  return res.data;
+}
+
+export async function updateMajor(id: string, data: MajorUpdateParams): Promise<Major> {
+  const res = await api.patch(`/majors/${id}`, data);
+  return res.data;
+}
+
+export async function deleteMajor(id: string): Promise<void> {
+  const res = await api.delete(`/majors/${id}`);
+  return res.data;
+}
+
 // CRUD cho combo
 export async function getCombos(params?: any): Promise<Combo[]> {
   const res = await api.get('/combos', { params });

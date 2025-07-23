@@ -17,6 +17,7 @@ type SubjectWithSemester = {
   _id: string;
   subjectCode: string;
   subjectName: string;
+  credit: number;
   semesterNumber?: number | string;
 };
 
@@ -69,6 +70,7 @@ export default function CurriculumDetailModal({
                         <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16">STT</th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Subject Code</th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Subject Name</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Credit</th>
                         <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-24">Term No</th>
                       </tr>
                     </thead>
@@ -90,6 +92,9 @@ export default function CurriculumDetailModal({
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                             {subject.subjectName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                            {subject.credit || "0"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-700">
                             <Badge variant="outline" className={`${
