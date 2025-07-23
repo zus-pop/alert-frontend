@@ -109,8 +109,8 @@ export default function MajorListPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-               {console.log("111",data)}
-              {data?.map((major: Major) => (
+             
+              {data?.data?.map((major: Major) => (
                 <tr key={major._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-800 font-medium">{major.majorCode}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{major.majorName}</td>
