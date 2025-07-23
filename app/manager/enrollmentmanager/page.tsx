@@ -31,7 +31,7 @@ export default function EnrollmentManagerPage() {
     setLoading(true);
     fetchStudents(1, 1000) // Fetch all students
       .then((res) => {
-        setStudents(res.data.map(mockStudentData));
+        setStudents((res.data || []).map(mockStudentData));
         setLoading(false);
       })
       .catch(() => {
@@ -67,7 +67,7 @@ export default function EnrollmentManagerPage() {
           />
         </div>
         <ul className="divide-y divide-gray-200">
-          {filteredStudents.map(student => (
+          { (filteredStudents || []).map(student => (
             <li
               key={student._id}
               className={`p-4 cursor-pointer hover:bg-blue-50 ${selectedStudent?._id === student._id ? 'bg-blue-100' : ''}`}
@@ -338,16 +338,16 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
         <div>
           <label className="block text-sm font-medium text-gray-700">Major</label>
           <Select
-            options={majors.map(m => ({ value: m._id, label: m.majorName }))}
-            value={majors.map(m => ({ value: m._id, label: m.majorName })).find(m => m.value === selectedMajor)}
+            options={(majors || []).map(m => ({ value: m._id, label: m.majorName }))}
+            value={(majors || []).map(m => ({ value: m._id, label: m.majorName })).find(m => m.value === selectedMajor)}
             onChange={opt => setSelectedMajor(opt?.value || "")}
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Combo</label>
           <Select
-            options={combos.map(c => ({ value: c._id, label: c.comboName }))}
-            value={combos.map(c => ({ value: c._id, label: c.comboName })).find(c => c.value === selectedCombo)}
+            options={(combos || []).map(c => ({ value: c._id, label: c.comboName }))}
+            value={(combos || []).map(c => ({ value: c._id, label: c.comboName })).find(c => c.value === selectedCombo)}
             onChange={opt => setSelectedCombo(opt?.value || "")}
             isDisabled={!selectedMajor}
           />
@@ -355,8 +355,8 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
         <div>
           <label className="block text-sm font-medium text-gray-700">Curriculum</label>
            <Select
-            options={curriculums.map(cur => ({ value: cur._id, label: cur.curriculumName }))}
-            value={curriculums.map(cur => ({ value: cur._id, label: cur.curriculumName })).find(cur => cur.value === selectedCurriculum)}
+            options={(curriculums || []).map(cur => ({ value: cur._id, label: cur.curriculumName }))}
+            value={(curriculums || []).map(cur => ({ value: cur._id, label: cur.curriculumName })).find(cur => cur.value === selectedCurriculum)}
             onChange={opt => setSelectedCurriculum(opt?.value || "")}
             isDisabled={!selectedCombo}
           />
@@ -384,9 +384,9 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
       </div>
       <div className="mt-6">
         <h4 className="text-lg font-semibold">Available Courses to Enroll for Semester {student.learnedSemester}</h4>
-        {subjectsForSemester.length > 0 ? (
+        { (subjectsForSemester || []).length > 0 ? (
           <div className="mt-4 space-y-2">
-            {subjectsForSemester.map(subject => (
+            {(subjectsForSemester || []).map(subject => (
               <div key={subject._id} className="border rounded-lg mb-2">
                 <div
                   className="flex items-center p-3 cursor-pointer hover:bg-gray-50"
@@ -398,8 +398,8 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
                 </div>
                 {expandedSubject === subject._id && (
                   <div className="pl-6 pb-3">
-                    {availableCoursesBySubject[subject._id] && availableCoursesBySubject[subject._id].length > 0 ? (
-                      availableCoursesBySubject[subject._id].map(course => (
+                    { (availableCoursesBySubject[subject._id] || []).length > 0 ? (
+                      (availableCoursesBySubject[subject._id] || []).map(course => (
                         <div key={course._id} className="flex items-center mb-2">
                           <input
                             type="checkbox"
@@ -439,17 +439,17 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
 
         {/* Enrolled Courses Section */}
         <h4 className="text-lg font-semibold mt-8">Enrolled Courses</h4>
-        {subjectsForSemester.length > 0 ? (
+        { (subjectsForSemester || []).length > 0 ? (
           <div className="mt-4 space-y-2">
-            {subjectsForSemester.map(subject => (
+            {(subjectsForSemester || []).map(subject => (
               <div key={subject._id} className="border rounded-lg mb-2">
                 <div className="flex items-center p-3 bg-gray-50">
                   <span className="font-medium text-gray-800">{subject.subjectCode} - {subject.subjectName}</span>
                   <span className="ml-2 text-xs text-gray-500">(Semester: {(subject as any).semesterNumber})</span>
                 </div>
                 <div className="pl-6 pb-3">
-                  {enrolledCoursesBySubject[subject._id] && enrolledCoursesBySubject[subject._id].length > 0 ? (
-                    enrolledCoursesBySubject[subject._id].map(course => (
+                  { (enrolledCoursesBySubject[subject._id] || []).length > 0 ? (
+                    (enrolledCoursesBySubject[subject._id] || []).map(course => (
                       <div key={course._id} className="flex items-center mb-2">
                         <span className="ml-3 block text-sm font-medium text-gray-700">
                           Course: {course.title || course.subjectId?.subjectName || course._id}
