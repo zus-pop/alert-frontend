@@ -4,7 +4,9 @@ import React, { useEffect, useState } from "react"
 import { StudentRow } from "../studentmanager/StudentRow"
 import { fetchStudents, Student as ApiStudent, createStudent, CreateStudentPayload, updateStudent, restoreStudent, deleteStudent } from "../../../services/studentApi"
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from "../../../components/ui/dialog"
-import { getMajors, getCombos, getCurriculums, Major, Combo, Curriculum } from '../../../services/majorApi';
+import { getMajors, getCombos, Major, Combo } from '../../../services/majorApi';
+import { Curriculum } from '../../../services/curriculumApi.types';
+import { getCurriculums } from '../../../services/curriculumApi';
 
 export interface Student {
   id: string;
@@ -116,7 +118,7 @@ export default function StudentManagerPage() {
   // Khi chọn combo, load curriculums
   useEffect(() => {
     if (selectedCombo) {
-      getCurriculums({ comboId: selectedCombo }).then(setCurriculums);
+      getCurriculums({ comboId: selectedCombo }).then(res => setCurriculums(res.data));
       setSelectedCurriculum('');
     } else {
       setCurriculums([]);
