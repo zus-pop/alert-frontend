@@ -213,6 +213,28 @@ export default function CourseManagerPage() {
   if (loading) return <div>Loading course list...</div>;
   if (error) return <div>{error}</div>;
 
+  // Hàm sort semester theo mùa và năm
+  function sortSemesters(semesters: Semester[]) {
+    const seasonOrder = { FALL: 1, SUMMER: 2, SPRING: 3 };
+    return semesters.slice().sort((a, b) => {
+      function parseSemesterName(name: string = "") {
+        // Hỗ trợ cả 'SUMMER2026' và 'SUMMER 2026'
+        const match = name.match(/(SPRING|SUMMER|FALL)[\s]?([0-9]{4})/i);
+        if (match) {
+          return {
+            season: match[1].toUpperCase(),
+            year: Number(match[2])
+          };
+        }
+        return { season: '', year: 0 };
+      }
+      const aParsed = parseSemesterName(a.semesterName);
+      const bParsed = parseSemesterName(b.semesterName);
+      if (aParsed.year !== bParsed.year) return bParsed.year - aParsed.year; // Năm mới nhất lên đầu
+      return (seasonOrder[aParsed.season as keyof typeof seasonOrder] || 99) - (seasonOrder[bParsed.season as keyof typeof seasonOrder] || 99);
+    });
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -226,7 +248,7 @@ export default function CourseManagerPage() {
                 onChange={e => setFilterSemester(e.target.value)}
               >
                 <option value="">All semesters</option>
-                {semesters.map(s => (
+                {sortSemesters(semesters).map(s => (
                   <option key={s._id} value={s._id}>{s.semesterName}</option>
                 ))}
               </select>
@@ -254,7 +276,7 @@ export default function CourseManagerPage() {
                       required
                     >
                       <option value="">Select semester</option>
-                      {semesters.map(s => (
+                      {sortSemesters(semesters).map(s => (
                         <option key={s._id} value={s._id}>{s.semesterName}</option>
                       ))}
                     </select>
@@ -399,7 +421,7 @@ export default function CourseManagerPage() {
                       required
                     >
                       <option value="">Select semester</option>
-                      {semesters.map(s => (
+                      {sortSemesters(semesters).map(s => (
                         <option key={s._id} value={s._id}>{s.semesterName}</option>
                       ))}
                     </select>
