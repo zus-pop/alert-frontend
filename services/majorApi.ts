@@ -7,15 +7,7 @@ import {
   MajorUpdateParams 
 } from './majorApi.types';
 
-// Interface cho Major, Combo
-export interface Major {
-  _id: string;
-  majorCode: string;
-  majorName: string;
-  createdAt?: string;
-  updatedAt?: string;
-  __v?: number;
-}
+// KHÔNG định nghĩa lại interface Major ở đây!
 
 export interface Combo {
   _id: string;
