@@ -1,6 +1,6 @@
 import { api } from './api';
 
-// Interface cho Major, Combo, Curriculum
+// Interface cho Major, Combo
 export interface Major {
   _id: string;
   majorCode: string;
@@ -19,25 +19,6 @@ export interface Combo {
   createdAt?: string;
   updatedAt?: string;
   __v?: number;
-}
-
-export interface Curriculum {
-  _id: string;
-  curriculumName: string;
-  comboId: string | {
-    _id: string;
-    comboCode: string;
-    comboName: string;
-    description?: string;
-    majorId: string;
-    createdAt?: string;
-    updatedAt?: string;
-    __v?: number;
-  };
-  createdAt?: string;
-  updatedAt?: string;
-  __v?: number;
-  subjects: any[];
 }
 
 // CRUD cho major
@@ -64,9 +45,5 @@ export async function deleteMajor(id: string): Promise<void> {
 // CRUD cho combo, curriculum (nếu cần)
 export async function getCombos(params?: any): Promise<Combo[]> {
   const res = await api.get('/combos', { params });
-  return res.data.data || res.data;
-}
-export async function getCurriculums(params?: any): Promise<Curriculum[]> {
-  const res = await api.get('/curriculums', { params });
   return res.data.data || res.data;
 }

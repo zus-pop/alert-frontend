@@ -1,7 +1,9 @@
 "use client";
 import React, { useEffect, useState, useMemo } from "react";
 import { fetchStudents, Student, updateStudent } from "../../../services/studentApi";
-import { getMajors, getCombos, getCurriculums, Major, Combo, Curriculum } from "../../../services/majorApi";
+import { getMajors, getCombos, Major, Combo } from "../../../services/majorApi";
+import { Curriculum, CurriculumQueryParams, CurriculumResponse } from "../../../services/curriculumApi.types";
+import { getCurriculums } from "../../../services/curriculumApi";
 import { fetchCourses, Course } from "../../../services/courseApi";
 import { createEnrollment, fetchEnrollments, deleteEnrollment } from "../../../services/enrollmentApi";
 import { useToast } from "../../../hooks/use-toast";
@@ -115,8 +117,8 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
   const [majors, setMajors] = useState<Major[]>([]);
   const [combos, setCombos] = useState<Combo[]>([]);
   const [curriculums, setCurriculums] = useState<Curriculum[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
   const [currentCurriculum, setCurrentCurriculum] = useState<Curriculum | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [enrollableCourses, setEnrollableCourses] = useState<Course[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<Set<string>>(new Set());
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
@@ -151,9 +153,9 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
   
     // Fetch curriculum details if ID exists
     if (student.curriculumId) {
-      getCurriculums({ _id: student.curriculumId }).then(data => {
-        if (data && data.length > 0) {
-          setCurrentCurriculum(data[0]);
+      getCurriculums({ _id: student.curriculumId } as any).then(res => {
+        if (res && res.data && res.data.length > 0) {
+          setCurrentCurriculum(res.data[0]);
         }
       });
     } else {
@@ -164,7 +166,7 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
   useEffect(() => {
     // Fetch initial data for dropdowns
     getMajors().then(setMajors);
-    fetchCourses().then(setCourses); // Fetch all courses
+    fetchCourses().then((courses: Course[]) => setCourses(courses)); // Fetch all courses
   }, []);
 
   useEffect(() => {
@@ -172,25 +174,8 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
   }, [selectedMajor]);
 
   useEffect(() => {
-    if (selectedCombo) getCurriculums({ comboId: selectedCombo }).then(setCurriculums);
+    if (selectedCombo) getCurriculums({ comboId: selectedCombo }).then(res => setCurriculums(res.data));
   }, [selectedCombo]);
-
-  // --- Memo to filter enrollable courses ---
-  useMemo(() => {
-    if (!currentCurriculum || !student.learnedSemester) {
-      setEnrollableCourses([]);
-      return;
-    }
-    // Subjects that match student's current semester
-    const subjectsForSemester = currentCurriculum.subjects.filter(
-      (s: any) => s.semesterNumber === student.learnedSemester
-    );
-    const subjectIdsForSemester = new Set(subjectsForSemester.map((s: any) => s.subjectId));
-
-    // Find course objects that match these subjects
-    const filteredCourses = courses.filter(c => subjectIdsForSemester.has(c.subjectId._id));
-    setEnrollableCourses(filteredCourses);
-  }, [currentCurriculum, student.learnedSemester, courses]);
 
   const fetchAndSetEnrollments = (studentId: string) => {
     fetchEnrollments(1, 1000).then(res => {
@@ -212,9 +197,9 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
 
   // 1. Lọc subject đúng kỳ từ curriculum
   const subjectsForSemester = useMemo(() => {
-    if (!currentCurriculum || !student.learnedSemester) return [];
+    if (!currentCurriculum || !student.learnedSemester || !currentCurriculum.subjects) return [];
     return currentCurriculum.subjects.filter(
-      (s: any) => Number(s.semesterNumber) === Number(student.learnedSemester)
+      (s: any) => Number((s as any).semesterNumber) === Number(student.learnedSemester)
     );
   }, [currentCurriculum, student.learnedSemester]);
 
@@ -222,7 +207,7 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
   const coursesBySubject = useMemo(() => {
     const map: { [subjectId: string]: Course[] } = {};
     subjectsForSemester.forEach((subject: any) => {
-      map[subject._id] = courses.filter(c => c.subjectId._id === subject._id);
+      map[subject._id] = courses.filter((c: Course) => c.subjectId._id === subject._id);
     });
     return map;
   }, [subjectsForSemester, courses]);
@@ -231,7 +216,7 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
   const availableCoursesBySubject = useMemo(() => {
     const map: { [subjectId: string]: Course[] } = {};
     subjectsForSemester.forEach((subject: any) => {
-      map[subject._id] = courses.filter(c => c.subjectId._id === subject._id && !enrolledCourseIds.has(c._id));
+      map[subject._id] = courses.filter((c: Course) => c.subjectId._id === subject._id && !enrolledCourseIds.has(c._id));
     });
     return map;
   }, [subjectsForSemester, courses, enrolledCourseIds]);
@@ -239,7 +224,7 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
   const enrolledCoursesBySubject = useMemo(() => {
     const map: { [subjectId: string]: Course[] } = {};
     subjectsForSemester.forEach((subject: any) => {
-      map[subject._id] = courses.filter(c => c.subjectId._id === subject._id && enrolledCourseIds.has(c._id));
+      map[subject._id] = courses.filter((c: Course) => c.subjectId._id === subject._id && enrolledCourseIds.has(c._id));
     });
     return map;
   }, [subjectsForSemester, courses, enrolledCourseIds]);
@@ -268,7 +253,7 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
       ));
       toast({ title: "Enrollment successful!", description: `Enrolled student in ${selectedCourses.size} courses.` });
       setSelectedCourses(new Set());
-      await fetchCourses().then(setCourses); // fetch lại courses
+      await fetchCourses().then((courses: Course[]) => setCourses(courses)); // fetch lại courses
       fetchAndSetEnrollments(student._id); // fetch lại enrollments
     } catch (error) {
       toast({ title: "Enrollment failed.", description: "An error occurred while enrolling the student.", variant: "destructive" });
@@ -292,9 +277,9 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
       const updatedStudentRes = await fetchStudents(1, 1000);
       const updatedStudent = updatedStudentRes.data.find(s => s._id === student._id);
       onUpdateStudent(updatedStudent || {});
-      getCurriculums({ _id: selectedCurriculum }).then(data => {
-        if (data && data.length > 0) {
-          setCurrentCurriculum(data[0]);
+      getCurriculums({ _id: selectedCurriculum } as any).then(res => {
+        if (res && res.data && res.data.length > 0) {
+          setCurrentCurriculum(res.data[0]);
         }
       });
       setIsEditing(false);
@@ -324,7 +309,9 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
     console.log('enrollments', enrollments);
     console.log('courses', courses);
     console.log('enrolledCourseIds', Array.from(enrolledCourseIds));
-    console.log('enrolledCoursesBySubject', enrolledCoursesBySubject);
+    if (typeof enrolledCoursesBySubject !== 'undefined') {
+      console.log('enrolledCoursesBySubject', enrolledCoursesBySubject);
+    }
   }, [enrollments, courses, enrolledCourseIds, enrolledCoursesBySubject]);
 
   // --- Render logic ---
@@ -405,7 +392,7 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
                   onClick={() => setExpandedSubject(expandedSubject === subject._id ? null : subject._id)}
                 >
                   <span className="font-medium text-gray-800">{subject.subjectCode} - {subject.subjectName}</span>
-                  <span className="ml-2 text-xs text-gray-500">(Semester: {subject.semesterNumber})</span>
+                  <span className="ml-2 text-xs text-gray-500">(Semester: {(subject as any).semesterNumber})</span>
                   <span className="ml-auto text-blue-600">{expandedSubject === subject._id ? '▲' : '▼'}</span>
                 </div>
                 {expandedSubject === subject._id && (
@@ -457,7 +444,7 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
               <div key={subject._id} className="border rounded-lg mb-2">
                 <div className="flex items-center p-3 bg-gray-50">
                   <span className="font-medium text-gray-800">{subject.subjectCode} - {subject.subjectName}</span>
-                  <span className="ml-2 text-xs text-gray-500">(Semester: {subject.semesterNumber})</span>
+                  <span className="ml-2 text-xs text-gray-500">(Semester: {(subject as any).semesterNumber})</span>
                 </div>
                 <div className="pl-6 pb-3">
                   {enrolledCoursesBySubject[subject._id] && enrolledCoursesBySubject[subject._id].length > 0 ? (
