@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState, useMemo } from "react";
 import { fetchStudents, Student, updateStudent } from "../../../services/studentApi";
-import { getMajors, getCombos, Major, Combo } from "../../../services/majorApi";
+import { getMajors, getCombos, Combo } from "../../../services/majorApi";
+import { Major } from "../../../services/majorApi.types";
 import { Curriculum, CurriculumQueryParams, CurriculumResponse } from "../../../services/curriculumApi.types";
 import { getCurriculums } from "../../../services/curriculumApi";
 import { fetchCourses, Course } from "../../../services/courseApi";
@@ -165,7 +166,7 @@ function EnrollmentDetails({ student, onUpdateStudent }: EnrollmentDetailsProps)
   
   useEffect(() => {
     // Fetch initial data for dropdowns
-    getMajors().then(setMajors);
+    getMajors().then(res => setMajors(res.data)); // nếu res.data là array
     fetchCourses().then((courses: Course[]) => setCourses(courses)); // Fetch all courses
   }, []);
 
