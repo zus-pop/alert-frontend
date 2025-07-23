@@ -39,7 +39,6 @@ export default function MajorListPage() {
     limit 
   });
   const { mutate: deleteMajor, isPending: isDeleting } = useDeleteMajor();
-
   return (
     <div className="bg-slate-50 min-h-screen p-6 rounded-md">
       <div className="flex justify-between items-center mb-6">
@@ -148,12 +147,15 @@ export default function MajorListPage() {
                         <div className=" absolute   mt-2 w-36 bg-white rounded-md shadow-lg z-10 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200">
                           <div className="py-1">
                             <button
+                            
                               onClick={() => router.push(`/admin/majors/${major._id}`)}
                               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                             >
+                             
                               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
                                 <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
                               </svg>
+                            
                               Edit
                             </button>
                             <button

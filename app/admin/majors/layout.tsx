@@ -10,7 +10,6 @@ export default function MajorsLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Function to handle tab change
   const handleTabChange = (value: string) => {
     if (value === 'list') {
       router.push('/admin/majors');
@@ -19,15 +18,24 @@ export default function MajorsLayout({ children }: { children: ReactNode }) {
     }
   };
 
-  // Determine the active tab based on the current URL
-  const activeTab = pathname.includes('/new') ? 'new' : 'list';
+  const getActiveTab = () => {
+    if (pathname.includes('/new')) {
+      return 'new';
+    }
+    if (pathname.startsWith('/admin/majors/') && pathname.split('/').length === 4) {
+      return 'edit';
+    }
+    return 'list';
+  };
+  
+  const activeTab = getActiveTab();
 
   return (
     <div className="container py-10">
       <h1 className="text-3xl font-bold mb-8">Major Management</h1>
       
       <Card className={cn("w-full")}>
-        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <div className="border-b px-4">
             <TabsList className="h-12">
               <TabsTrigger value="list" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
@@ -36,24 +44,30 @@ export default function MajorsLayout({ children }: { children: ReactNode }) {
               <TabsTrigger value="new" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
                 Add New Major
               </TabsTrigger>
+              {activeTab === 'edit' && (
+                <TabsTrigger value="edit" disabled className="data-[state=active]:border-b-2 data-[state=active]:border-primary text-primary">
+                  Edit Major
+                </TabsTrigger>
+              )}
             </TabsList>
           </div>
           
           <TabsContent value="list" className="m-0">
             <CardContent className={cn("p-6")}>
-              {pathname === '/admin/majors' && children}
+              {activeTab === 'list' && children}
             </CardContent>
           </TabsContent>
           
           <TabsContent value="new" className="m-0">
             <CardContent className={cn("p-6")}>
-              {pathname.includes('/new') && children}
+              {activeTab === 'new' && children}
             </CardContent>
           </TabsContent>
           
           <TabsContent value="edit" className="m-0">
             <CardContent className={cn("p-6")}>
-              {pathname.includes('/admin/majors/') && !pathname.includes('/new') && children}
+              
+                {activeTab === 'edit' && children}
             </CardContent>
           </TabsContent>
         </Tabs>
